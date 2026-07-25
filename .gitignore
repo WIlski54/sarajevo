@@ -1,0 +1,60 @@
+# ─────────────────────────────────────────────────────────────
+#  Geheimnisse — NIEMALS committen (Repo ist public!)
+# ─────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# ─────────────────────────────────────────────────────────────
+#  Build-Ergebnisse
+#  Alles hierin ist per Skript reproduzierbar, aber groß
+#  (Video mehrere hundert MB). Separat sichern — ein Neurender
+#  kostet Stunden. Der Lizenznachweis der Fotos liegt bewusst
+#  in docs/bildnachweis.md und ist damit versioniert.
+# ─────────────────────────────────────────────────────────────
+/media/
+
+# ─────────────────────────────────────────────────────────────
+#  Abhängigkeiten
+# ─────────────────────────────────────────────────────────────
+node_modules/
+/web/vendor/three-bundle.js
+
+# ─────────────────────────────────────────────────────────────
+#  Python
+# ─────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# ─────────────────────────────────────────────────────────────
+#  Blender
+#  Die Szenen entstehen prozedural aus blender/shots/*.py —
+#  .blend-Dateien sind nur Nebenprodukte, nie Wahrheitsquelle.
+#  Achtung: die Muster sind mit / verankert, damit sie NICHT
+#  blender/shots/ (die Skripte!) treffen.
+# ─────────────────────────────────────────────────────────────
+*.blend
+*.blend1
+*.blend2
+
+# ─────────────────────────────────────────────────────────────
+#  Arbeitsdateien der Pipeline
+# ─────────────────────────────────────────────────────────────
+/shots/
+/renders/
+/tmp/
+*.log
+
+# ─────────────────────────────────────────────────────────────
+#  Betriebssystem / Editor
+# ─────────────────────────────────────────────────────────────
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/

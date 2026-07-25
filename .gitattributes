@@ -1,0 +1,15 @@
+# Zeilenenden im Repository normalisiert auf LF, im Arbeitsverzeichnis
+# nativ (Windows: CRLF). Verhindert Diff-Rauschen zwischen Editoren und
+# den von Blender ausgeführten Python-Skripten.
+* text=auto eol=lf
+
+# Binärdateien nie anfassen
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.mp3 binary
+*.mp4 binary
+*.wav binary
+*.glb binary
+*.blend binary

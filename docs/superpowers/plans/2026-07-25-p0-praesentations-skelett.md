@@ -64,7 +64,17 @@ test("Test-Läufer und ESM funktionieren", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `node --test tests/`
-Expected: FAIL — `Cannot use import statement outside a module` bzw. `Unexpected token 'export'`, weil `package.json` fehlt.
+Expected: FAIL — `Error: Cannot find module '<projekt>\tests'`.
+
+**Verifiziert auf Node v25.9.0:** Ein Verzeichnis als Argument von `--test` wird
+nicht als Testverzeichnis durchsucht, sondern als Modul aufzulösen versucht — das
+scheitert unabhängig von `package.json`. Ohne Argument (`node --test`) findet Node
+die Tests rekursiv, mit explizitem Glob ebenfalls. Deshalb verwendet das
+`test`-Skript unten den Glob und nicht das Verzeichnis.
+
+Nebenbefund derselben Prüfung: Node 25 erkennt ESM in `.js`-Dateien automatisch,
+auch ohne `"type": "module"`. Der Eintrag bleibt trotzdem — er ist korrekt und wird
+gebraucht, sobald echte Module dazukommen.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -78,7 +88,7 @@ Expected: FAIL — `Cannot use import statement outside a module` bzw. `Unexpect
   "type": "module",
   "description": "Cinematic Live-Praesentation zum Attentat von Sarajevo, 28. Juni 1914",
   "scripts": {
-    "test": "node --test tests/",
+    "test": "node --test \"tests/**/*.test.js\"",
     "check:media": "node tools/check_media.js",
     "serve": "python tools/serve.py"
   }

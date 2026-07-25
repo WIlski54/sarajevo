@@ -61,16 +61,41 @@ media/            Build-Ergebnisse, nicht versioniert
 docs/             Spezifikation, Moderationsleitfaden, Bildnachweis
 ```
 
-## Bauen
+## Bauen und prüfen
 
-Voraussetzungen: Blender 5.1, Python 3 mit numpy/scipy/pillow, Node, ffmpeg.
+Für Phase P0 genügen **Python 3 und Node ≥ 20** — es gibt keine npm-Abhängigkeiten
+und keinen Build-Schritt. Für die späteren Phasen kommen Blender 5.1,
+numpy/scipy/pillow und ffmpeg dazu.
 
 ```bash
-copy .env.example .env
+npm test
 ```
 
-Danach den OpenAI-Key in `.env` eintragen (nur für die Sprachsynthese, nur zur
-Bauzeit). Die weiteren Bauschritte folgen mit der Implementierung.
+Prüft die gesamte Logik: historische Uhr, Presenter-Zustandsmaschine,
+Tastenbelegung, Video-Rückfall und die Beat-Daten. **Nach jeder Textänderung in
+`web/src/beats.js` laufen lassen** — ein vergessenes `+` am Zeilenende ist ein
+Syntaxfehler, der die ganze Präsentation lahmlegt, und der Test findet ihn sofort.
+
+```bash
+npm run check:media
+```
+
+Listet alle Video- und Tondateien, die noch fehlen. Solange Phase P1 bis P3 nicht
+gelaufen sind, fehlen planmäßig alle 22 — die Präsentation zeigt dann statt eines
+Shots die Texttafel des Beats. Vor dem Unterrichtseinsatz mit `--strict` prüfen,
+dann meldet der Befehl einen Fehler, statt nur zu berichten.
+
+```bash
+npm run serve
+```
+
+Startet den lokalen Server ohne Browser (Port 8014) — nützlich zum Entwickeln.
+Für den Unterricht ist `START_PRAESENTATION.bat` gedacht.
+
+Die Sprachsynthese der Phase P1 braucht einen OpenAI-Key. Dafür `.env.example`
+nach `.env` **kopieren** (nicht umbenennen — die Vorlage soll bleiben) und den
+Schlüssel eintragen. Er wird ausschließlich zur Bauzeit gebraucht; die fertige
+Präsentation läuft offline.
 
 ## Verwenden
 

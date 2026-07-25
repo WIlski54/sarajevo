@@ -17,12 +17,20 @@
  *  3. Unterhalb des BEATS-Arrays nichts anfassen.
  *
  * clock:     historische Uhrzeit, null wo das Zeitprotokoll keine nennt
- * shots:     Blender-Shots in Abspielreihenfolge. duration = redaktioneller
- *            Zielwert in Sekunden, wird in Phase P3 gegen die echten
- *            Renderlaengen abgeglichen.
- * narration: Sprechertext fuer die Sprachsynthese in Phase P1
+ * shots:     Blender-Shots in Abspielreihenfolge. duration = Sekunden Video,
+ *            die tatsaechlich gerendert werden muessen.
+ * narration: Sprechertext plus `seconds` - die an der fertigen mp3
+ *            GEMESSENE Dauer, kein Schaetzwert.
  * board:     Texttafel. Dient bei fehlender Videodatei auch als Rueckfall.
- * module:    interaktives three.js-Modul, kommt in Phase P4
+ * module:    interaktives three.js-Modul mit dem Zeitanteil, den es im
+ *            Ablauf traegt. Modulzeit kostet keine Renderzeit - Beats mit
+ *            Modul brauchen deshalb weniger Video.
+ *
+ * INVARIANTE: shots + module.seconds >= narration.seconds.
+ * Sonst spricht die Stimme weiter, waehrend das Bild schon zu Ende ist.
+ * Genau das war nach dem ersten Vertonen in sechs von acht Beats der Fall -
+ * die urspruenglichen Dauern waren Schaetzungen aus einer Zeit, in der es
+ * die Stimme noch nicht gab. Ein Test wacht jetzt darueber.
  */
 
 export const BEATS = [
@@ -30,9 +38,10 @@ export const BEATS = [
     id: 0,
     clock: null,
     title: "Prolog: Vidovdan",
-    shots: [{ file: "media/video/shot_00.mp4", duration: 26 }],
+    shots: [{ file: "media/video/shot_00.mp4", duration: 37 }],
     narration: {
       file: "media/audio/vo_00.mp3",
+      seconds: 33.8,
       voice: "narrator",
       instructions:
         "Ruhig, dokumentarisch, mit langen Pausen. Kein Pathos. Wie der Beginn " +
@@ -62,11 +71,12 @@ export const BEATS = [
     clock: "09:25",
     title: "Ankunft am Bahnhof",
     shots: [
-      { file: "media/video/shot_01.mp4", duration: 16 },
-      { file: "media/video/shot_02.mp4", duration: 20 },
+      { file: "media/video/shot_01.mp4", duration: 26 },
+      { file: "media/video/shot_02.mp4", duration: 32 },
     ],
     narration: {
       file: "media/audio/vo_01.mp3",
+      seconds: 55.4,
       voice: "narrator",
       instructions: "Sachlich erzaehlend, leicht waermer als der Prolog.",
       text:
@@ -101,12 +111,13 @@ export const BEATS = [
     clock: "10:10",
     title: "Der erste Anschlag am Appelkai",
     shots: [
-      { file: "media/video/shot_03.mp4", duration: 14 },
-      { file: "media/video/shot_04.mp4", duration: 24 },
-      { file: "media/video/shot_05.mp4", duration: 16 },
+      { file: "media/video/shot_03.mp4", duration: 17 },
+      { file: "media/video/shot_04.mp4", duration: 29 },
+      { file: "media/video/shot_05.mp4", duration: 19 },
     ],
     narration: {
       file: "media/audio/vo_02.mp3",
+      seconds: 62.2,
       voice: "narrator",
       instructions:
         "Zunehmend angespannt. Bei den zehn Sekunden knapper und schneller werden, " +
@@ -144,11 +155,12 @@ export const BEATS = [
     clock: "10:15",
     title: "Empfang im Rathaus",
     shots: [
-      { file: "media/video/shot_06.mp4", duration: 10 },
-      { file: "media/video/shot_07.mp4", duration: 26 },
+      { file: "media/video/shot_06.mp4", duration: 14 },
+      { file: "media/video/shot_07.mp4", duration: 36 },
     ],
     narration: {
       file: "media/audio/vo_03.mp3",
+      seconds: 47.4,
       voice: "narrator",
       instructions:
         "Sachlich, mit einem Hauch Ironie beim Buergermeister, der seine Rede " +
@@ -183,10 +195,11 @@ export const BEATS = [
     title: "Die fatale Routenänderung",
     shots: [
       { file: "media/video/shot_08.mp4", duration: 12 },
-      { file: "media/video/shot_09.mp4", duration: 24 },
+      { file: "media/video/shot_09.mp4", duration: 16 },
     ],
     narration: {
       file: "media/audio/vo_04.mp3",
+      seconds: 33.9,
       voice: "narrator",
       instructions:
         "Nuechtern, praezise, wie ein Untersuchungsbericht. Die Nuechternheit " +
@@ -207,7 +220,7 @@ export const BEATS = [
         "und biegen in die ursprünglich geplante Franz-Joseph-Straße ein. Als der " +
         "Irrtum bemerkt wird, müssen die Fahrzeuge anhalten und zurücksetzen.",
     },
-    module: "routeMap",
+    module: { name: "routeMap", seconds: 12 },
   },
 
   {
@@ -220,6 +233,7 @@ export const BEATS = [
     ],
     narration: {
       file: "media/audio/vo_05.mp3",
+      seconds: 43.3,
       voice: "narrator",
       instructions:
         "Sehr leise, sehr langsam, lange Pausen. Nach den Schuessen fast fluesternd. " +
@@ -256,9 +270,10 @@ export const BEATS = [
     id: 6,
     clock: null,
     title: "Epilog: Der Funke",
-    shots: [{ file: "media/video/shot_12.mp4", duration: 30 }],
+    shots: [{ file: "media/video/shot_12.mp4", duration: 20 }],
     narration: {
       file: "media/audio/vo_06.mp3",
+      seconds: 43.7,
       voice: "narrator",
       instructions:
         "Aufziehend, weiter werdend. Die Datumsangaben klar und getaktet, wie " +
@@ -283,7 +298,7 @@ export const BEATS = [
         "den Krieg ein, nachdem deutsche Truppen in das neutrale Belgien einmarschiert " +
         "sind. Aus einem Attentat wird ein Weltkrieg.",
     },
-    module: "europeFuse",
+    module: { name: "europeFuse", seconds: 27 },
   },
 
   {
@@ -293,6 +308,7 @@ export const BEATS = [
     shots: [{ file: "media/video/shot_13.mp4", duration: 14 }],
     narration: {
       file: "media/audio/vo_07.mp3",
+      seconds: 47.2,
       voice: "narrator",
       instructions:
         "Offen, fragend, an die Klasse gerichtet. Am Ende nicht abschliessend " +
@@ -318,7 +334,7 @@ export const BEATS = [
         "Nationalismus, Interessengegensätze in Südosteuropa. Das Attentat war der " +
         "Anlass. War es die Ursache?",
     },
-    module: "dominoes",
+    module: { name: "dominoes", seconds: 36 },
   },
 ];
 

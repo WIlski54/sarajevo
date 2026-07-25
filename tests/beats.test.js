@@ -103,12 +103,44 @@ test("jeder Beat hat Stimme und Sprechanweisung fuer die Sprachsynthese", () => 
   }
 });
 
-test("verwiesene Module stammen aus der bekannten Menge", () => {
+test("verwiesene Module stammen aus der bekannten Menge und tragen Zeit", () => {
   const known = new Set(["routeMap", "europeFuse", "dominoes", "carViewer"]);
   for (const beat of BEATS) {
-    if (beat.module !== null) {
-      assert.ok(known.has(beat.module), `Beat ${beat.id}: unbekanntes Modul ${beat.module}`);
-    }
+    if (beat.module === null) continue;
+    assert.ok(
+      known.has(beat.module.name),
+      `Beat ${beat.id}: unbekanntes Modul ${beat.module.name}`,
+    );
+    assert.ok(
+      beat.module.seconds > 0,
+      `Beat ${beat.id}: Modul ${beat.module.name} ohne Zeitanteil`,
+    );
+  }
+});
+
+test("jeder Beat hat genug Bild fuer seine Sprache", () => {
+  // Die entscheidende Invariante. Nach dem ersten Vertonen waren sechs von
+  // acht Beats zu kurz - Beat 7 hatte 14 s Bild fuer 47 s Text. Waere das
+  // erst nach dem Rendern aufgefallen, waeren Stunden Renderzeit fuer die
+  // Tonne gewesen.
+  for (const beat of BEATS) {
+    const bild =
+      beat.shots.reduce((s, shot) => s + shot.duration, 0) +
+      (beat.module?.seconds ?? 0);
+    assert.ok(
+      bild >= beat.narration.seconds,
+      `Beat ${beat.id}: ${bild}s Bild fuer ${beat.narration.seconds}s Sprache ` +
+        `- es fehlen ${(beat.narration.seconds - bild).toFixed(1)}s`,
+    );
+  }
+});
+
+test("gemessene Sprechdauern sind plausibel", () => {
+  for (const beat of BEATS) {
+    assert.ok(
+      beat.narration.seconds > 5 && beat.narration.seconds < 180,
+      `Beat ${beat.id}: Sprechdauer ${beat.narration.seconds}s unplausibel`,
+    );
   }
 });
 

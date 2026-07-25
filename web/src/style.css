@@ -1,0 +1,383 @@
+/* 1920x1080-first. Bewusst dunkel, damit das Bild traegt und der
+   Beamer nicht die Wand aufhellt. */
+
+:root {
+  --ink: #f2ece1;
+  --ink-dim: #b6ada0;
+  --bg: #0a0908;
+  --accent: #c8a24a; /* gedecktes Messing, Epoche 1914 */
+  --board-bg: rgba(12, 11, 10, 0.86);
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --sans: "Segoe UI", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  overflow: hidden;
+}
+
+.stage {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* ---------- Startbildschirm ---------- */
+/* Der Klick ist fachlich noetig: Browser geben Ton erst nach einer
+   Nutzerinteraktion frei (Spec Abschnitt 11). */
+
+.startscreen {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 1.6rem;
+  text-align: center;
+  background: radial-gradient(ellipse at 50% 40%, #1b1712 0%, #0a0908 70%);
+}
+
+.startscreen__kicker {
+  margin: 0;
+  color: var(--ink-dim);
+  font-size: 0.95rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.startscreen__title {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(3rem, 7vw, 6.5rem);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.startscreen__title span {
+  display: block;
+  margin-top: 0.9rem;
+  color: var(--accent);
+  font-size: clamp(1rem, 1.8vw, 1.7rem);
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+}
+
+.startscreen__button {
+  padding: 0.85rem 2.4rem;
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--accent);
+  font-family: var(--sans);
+  font-size: 1rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 220ms ease, color 220ms ease;
+}
+
+.startscreen__button:hover,
+.startscreen__button:focus-visible {
+  background: var(--accent);
+  color: #0a0908;
+}
+
+.startscreen__hint {
+  margin: 0;
+  color: var(--ink-dim);
+  font-size: 0.85rem;
+}
+
+.startscreen__hint kbd {
+  padding: 0.1rem 0.4rem;
+  border: 1px solid #443c31;
+  border-radius: 3px;
+  font-family: var(--sans);
+  font-size: 0.8rem;
+}
+
+/* ---------- Videoschicht ---------- */
+
+.videolayer,
+.videolayer video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #000;
+}
+
+/* ---------- Platzhalter bei fehlender Videodatei ---------- */
+/* Derselbe Pfad dient in P0 als Platzhalter und spaeter als
+   Laufzeit-Rueckfall (Spec Abschnitt 11). */
+
+.placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 1rem;
+  padding: 4rem;
+  text-align: center;
+  background: repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.014) 0 12px,
+      transparent 12px 24px
+    ),
+    #14110d;
+}
+
+.placeholder__beat {
+  color: var(--accent);
+  font-size: 0.85rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+.placeholder__title {
+  margin: 0;
+  max-width: 22ch;
+  font-family: var(--serif);
+  font-size: clamp(2rem, 4.4vw, 4rem);
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.placeholder__file {
+  color: #6d6459;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.8rem;
+}
+
+/* ---------- Texttafel ---------- */
+
+.board {
+  position: absolute;
+  right: 4vw;
+  bottom: 12vh;
+  width: min(38rem, 42vw);
+  padding: 2rem 2.2rem;
+  border-left: 2px solid var(--accent);
+  background: var(--board-bg);
+  backdrop-filter: blur(7px);
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 420ms ease, transform 420ms ease;
+}
+
+.board.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.board__heading {
+  margin: 0 0 0.9rem;
+  font-family: var(--serif);
+  font-size: 1.55rem;
+  font-weight: 400;
+  color: var(--accent);
+}
+
+.board__text {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+.board__quote {
+  margin: 1.3rem 0 0;
+  padding-left: 1rem;
+  border-left: 1px solid #4a4237;
+  font-family: var(--serif);
+  font-size: 1.2rem;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.board__source {
+  display: block;
+  margin-top: 0.6rem;
+  color: var(--ink-dim);
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  font-style: normal;
+}
+
+/* ---------- Historische Uhr ---------- */
+
+.clock {
+  position: absolute;
+  top: 3.4vh;
+  left: 4vw;
+  font-family: var(--serif);
+  font-size: clamp(2rem, 3.4vw, 3.2rem);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.85);
+}
+
+.clock__label {
+  display: block;
+  color: var(--ink-dim);
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+/* ---------- Schwarzbild ---------- */
+
+.blackout {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  transition: opacity 280ms ease;
+  pointer-events: none;
+}
+
+.blackout.is-visible {
+  opacity: 1;
+}
+
+/* ---------- Kapitelleiste, nur bei Mausbewegung ---------- */
+
+.chapters {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: 1px;
+  padding: 0.7rem 4vw 1.1rem;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  opacity: 0;
+  transition: opacity 320ms ease;
+}
+
+.chapters.is-visible {
+  opacity: 1;
+}
+
+.chapters__item {
+  flex: 1;
+  padding: 0.5rem 0.3rem;
+  border: 0;
+  border-top: 2px solid #3a342b;
+  background: transparent;
+  color: var(--ink-dim);
+  font-family: var(--sans);
+  font-size: 0.74rem;
+  text-align: left;
+  cursor: pointer;
+  transition: color 200ms ease, border-color 200ms ease;
+}
+
+.chapters__item:hover {
+  color: var(--ink);
+}
+
+.chapters__item.is-current {
+  border-top-color: var(--accent);
+  color: var(--accent);
+}
+
+.chapters__time {
+  display: block;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Kapiteluebersicht ---------- */
+
+.overview {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  gap: 0.5rem;
+  padding: 6vh 8vw;
+  background: rgba(6, 5, 5, 0.95);
+}
+
+.overview__heading {
+  margin: 0 0 1.4rem;
+  font-family: var(--serif);
+  font-size: 1.7rem;
+  font-weight: 400;
+  color: var(--accent);
+}
+
+.overview__item {
+  display: grid;
+  grid-template-columns: 6rem 1fr;
+  gap: 1.5rem;
+  padding: 0.7rem 0.4rem;
+  border: 0;
+  border-bottom: 1px solid #241f19;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 1.05rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.overview__item:hover {
+  background: rgba(200, 162, 74, 0.08);
+}
+
+.overview__item.is-current {
+  color: var(--accent);
+}
+
+.overview__time {
+  color: var(--ink-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Pause-Marke ---------- */
+
+.pausebadge {
+  position: absolute;
+  top: 3.6vh;
+  right: 4vw;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 0.78rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+/* ---------- Rueckfall ohne JavaScript ---------- */
+
+.fallback {
+  display: block;
+  max-width: 46rem;
+  margin: 12vh auto;
+  padding: 0 2rem;
+  font-family: var(--serif);
+  line-height: 1.65;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board,
+  .blackout,
+  .chapters {
+    transition: none;
+  }
+}

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sarajevo, 28. Juni 1914</title>
+    <link rel="stylesheet" href="src/style.css" />
+  </head>
+  <body>
+    <noscript class="fallback">
+      <h1>Sarajevo, 28. Juni 1914</h1>
+      <p>Diese Präsentation braucht JavaScript. Das Zeitprotokoll in Kurzform:</p>
+      <ul>
+        <li><strong>09:25</strong> Ankunft des Thronfolgerpaars am Bahnhof</li>
+        <li><strong>10:10</strong> Erster Anschlag am Appelkai: Čabrinović wirft eine Granate</li>
+        <li><strong>10:15</strong> Empfang im Rathaus, die Route wird geändert</li>
+        <li><strong>10:45</strong> Die Änderung erreicht die Fahrer nicht, falsche Abzweigung</li>
+        <li><strong>10:48</strong> Die Schüsse vor Schillers Delikatessenladen</li>
+      </ul>
+    </noscript>
+
+    <main id="stage" class="stage" aria-live="polite">
+      <div id="startscreen" class="startscreen">
+        <p class="startscreen__kicker">Gesamtschule Meiderich · Geschichte</p>
+        <h1 class="startscreen__title">Sarajevo<span>28. Juni 1914</span></h1>
+        <button id="startbutton" class="startscreen__button" type="button">
+          Präsentation starten
+        </button>
+        <p class="startscreen__hint">
+          Weiter mit <kbd>Leertaste</kbd> · Pause <kbd>P</kbd> ·
+          Schwarzbild <kbd>B</kbd> · Übersicht <kbd>Esc</kbd>
+        </p>
+      </div>
+
+      <div id="videolayer" class="videolayer" hidden></div>
+      <div id="placeholder" class="placeholder" hidden></div>
+      <aside id="board" class="board" hidden></aside>
+      <div id="clock" class="clock" hidden></div>
+      <div id="blackout" class="blackout" hidden></div>
+      <nav id="chapters" class="chapters" hidden></nav>
+      <div id="overview" class="overview" hidden></div>
+      <div id="pausebadge" class="pausebadge" hidden>Pause</div>
+    </main>
+
+    <script type="module" src="src/main.js"></script>
+  </body>
+</html>

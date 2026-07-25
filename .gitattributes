@@ -1,7 +1,13 @@
-# Zeilenenden im Repository normalisiert auf LF, im Arbeitsverzeichnis
-# nativ (Windows: CRLF). Verhindert Diff-Rauschen zwischen Editoren und
-# den von Blender ausgeführten Python-Skripten.
+# Zeilenenden ueberall auf LF - im Repository UND im Arbeitsverzeichnis.
+# Verhindert Diff-Rauschen zwischen Editoren und haelt die von Blender
+# ausgefuehrten Python-Skripte konsistent.
 * text=auto eol=lf
+
+# Ausnahme: Batch-Dateien brauchen CRLF. cmd.exe vertraegt LF meistens,
+# stolpert aber bei Labels und mehrzeiligen Bloecken - und diese Datei ist
+# der Doppelklick-Einstieg fuer den Unterricht. Kein Ort fuer "meistens".
+*.bat text eol=crlf
+*.cmd text eol=crlf
 
 # Binärdateien nie anfassen
 *.png binary

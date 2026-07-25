@@ -36,9 +36,12 @@ export function createBoard(element) {
       }
 
       element.hidden = false;
-      // Erst im naechsten Frame einblenden, sonst ueberspringt der
-      // Browser die Transition.
-      requestAnimationFrame(() => element.classList.add("is-visible"));
+      // Reflow erzwingen, damit der Browser den Startzustand uebernimmt und
+      // die Transition wirklich laeuft. Bewusst NICHT requestAnimationFrame:
+      // in Hintergrund-Tabs feuert rAF nicht, und die Texttafel ist der
+      // Inhalt - sie darf nie an der Sichtbarkeit des Tabs haengen.
+      void element.offsetWidth;
+      element.classList.add("is-visible");
     },
 
     hide() {

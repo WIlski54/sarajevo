@@ -1769,6 +1769,12 @@ body {
 
 /* ---------- Texttafel ---------- */
 
+/* Sichtbar ist der NORMALZUSTAND. Das Einblenden ist Zierde, keine
+   Bedingung. Frueher stand hier opacity:0 plus eine Transition - dann
+   haengt der Text daran, dass die Animation laeuft, und in
+   Hintergrund-Tabs oder bei angehaltener Seite blieb die Tafel
+   unsichtbar. Ohne fill-mode gilt ausserhalb der Animation die normale
+   Regel: laeuft sie nicht, steht der Text trotzdem da. */
 .board {
   position: absolute;
   right: 4vw;
@@ -1778,14 +1784,19 @@ body {
   border-left: 2px solid var(--accent);
   background: var(--board-bg);
   backdrop-filter: blur(7px);
-  opacity: 0;
-  transform: translateY(14px);
-  transition: opacity 420ms ease, transform 420ms ease;
+  opacity: 1;
+  transform: none;
 }
 
 .board.is-visible {
-  opacity: 1;
-  transform: translateY(0);
+  animation: board-ein 420ms ease;
+}
+
+@keyframes board-ein {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
 }
 
 .board__heading {
@@ -1981,10 +1992,12 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .board,
   .blackout,
   .chapters {
     transition: none;
+  }
+  .board.is-visible {
+    animation: none;
   }
 }
 ```
@@ -2259,12 +2272,24 @@ export function createBoard(element) {
       }
 
       element.hidden = false;
-      // Reflow erzwingen, damit der Browser den Startzustand uebernimmt und
-      // die Transition wirklich laeuft. Bewusst NICHT requestAnimationFrame:
-      // in Hintergrund-Tabs feuert rAF nicht, und die Texttafel ist der
-      // Inhalt - sie darf nie an der Sichtbarkeit des Tabs haengen.
-      void element.offsetWidth;
-      element.classList.add("is-visible");
+
+      // Die Texttafel ist der Inhalt der Praesentation - sie darf unter
+      // keinen Umstaenden unsichtbar sein. Deshalb ist "sichtbar" die
+      // Grundregel im CSS, und das Einblenden laeuft nur als Animation
+      // obendrauf.
+      //
+      // Die Animation wird bewusst NUR bei sichtbarer Seite gestartet:
+      // in verborgenen Tabs laufen Animationen nicht weiter, bleiben im
+      // Startbild (opacity 0) stehen und enden nie - die Tafel waere
+      // dauerhaft leer. Ohne die Klasse greift schlicht die Grundregel.
+      //
+      // Klasse erst abnehmen und einen Reflow erzwingen, sonst spielt die
+      // Animation nur beim allerersten Beat.
+      element.classList.remove("is-visible");
+      if (document.visibilityState === "visible") {
+        void element.offsetWidth;
+        element.classList.add("is-visible");
+      }
     },
 
     hide() {

@@ -163,6 +163,12 @@ body {
 
 /* ---------- Texttafel ---------- */
 
+/* Sichtbar ist der NORMALZUSTAND. Das Einblenden ist Zierde, keine
+   Bedingung. Frueher stand hier opacity:0 plus eine Transition - dann
+   haengt der Text daran, dass die Animation laeuft, und in
+   Hintergrund-Tabs oder bei angehaltener Seite blieb die Tafel
+   unsichtbar. Ohne fill-mode gilt ausserhalb der Animation die normale
+   Regel: laeuft sie nicht, steht der Text trotzdem da. */
 .board {
   position: absolute;
   right: 4vw;
@@ -172,14 +178,19 @@ body {
   border-left: 2px solid var(--accent);
   background: var(--board-bg);
   backdrop-filter: blur(7px);
-  opacity: 0;
-  transform: translateY(14px);
-  transition: opacity 420ms ease, transform 420ms ease;
+  opacity: 1;
+  transform: none;
 }
 
 .board.is-visible {
-  opacity: 1;
-  transform: translateY(0);
+  animation: board-ein 420ms ease;
+}
+
+@keyframes board-ein {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
 }
 
 .board__heading {
@@ -375,9 +386,11 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .board,
   .blackout,
   .chapters {
     transition: none;
+  }
+  .board.is-visible {
+    animation: none;
   }
 }

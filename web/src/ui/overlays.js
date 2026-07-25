@@ -36,12 +36,24 @@ export function createBoard(element) {
       }
 
       element.hidden = false;
-      // Reflow erzwingen, damit der Browser den Startzustand uebernimmt und
-      // die Transition wirklich laeuft. Bewusst NICHT requestAnimationFrame:
-      // in Hintergrund-Tabs feuert rAF nicht, und die Texttafel ist der
-      // Inhalt - sie darf nie an der Sichtbarkeit des Tabs haengen.
-      void element.offsetWidth;
-      element.classList.add("is-visible");
+
+      // Die Texttafel ist der Inhalt der Praesentation - sie darf unter
+      // keinen Umstaenden unsichtbar sein. Deshalb ist "sichtbar" die
+      // Grundregel im CSS, und das Einblenden laeuft nur als Animation
+      // obendrauf.
+      //
+      // Die Animation wird bewusst NUR bei sichtbarer Seite gestartet:
+      // in verborgenen Tabs laufen Animationen nicht weiter, bleiben im
+      // Startbild (opacity 0) stehen und enden nie - die Tafel waere
+      // dauerhaft leer. Ohne die Klasse greift schlicht die Grundregel.
+      //
+      // Klasse erst abnehmen und einen Reflow erzwingen, sonst spielt die
+      // Animation nur beim allerersten Beat.
+      element.classList.remove("is-visible");
+      if (document.visibilityState === "visible") {
+        void element.offsetWidth;
+        element.classList.add("is-visible");
+      }
     },
 
     hide() {

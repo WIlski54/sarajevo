@@ -317,6 +317,35 @@ test("quoteAfter setzt ein Zitat auf der Tafel voraus - kein Text doppelt gepfle
   }
 });
 
+test("die Uhrzeit auf der Tafel stimmt mit dem clock-Feld ueberein", () => {
+  // Jede Uhrzeit steht pro Beat an drei Stellen: clock, am Anfang von
+  // board.heading und als gesprochener Satz in narration.text. Die ersten
+  // beiden sind maschinell pruefbar - der dritte nicht (deutsche Zahlwoerter).
+  for (const beat of BEATS) {
+    if (beat.clock === null) continue;
+    const gefunden = /^(\d{2}:\d{2})/.exec(beat.board.heading);
+    assert.ok(gefunden, `Beat ${beat.id}: board.heading beginnt nicht mit einer Uhrzeit`);
+    assert.equal(
+      gefunden[1],
+      beat.clock,
+      `Beat ${beat.id}: Tafel sagt ${gefunden[1]}, clock sagt ${beat.clock}`,
+    );
+  }
+});
+
+test("jeder Beat hat Stimme und Sprechanweisung fuer die Sprachsynthese", () => {
+  // Phase P1 gibt instructions direkt an die Sprachsynthese weiter. Fehlt der
+  // Wert, klingt der Beat still falsch statt laut zu scheitern.
+  const stimmen = new Set(["narrator", "quote"]);
+  for (const beat of BEATS) {
+    assert.ok(stimmen.has(beat.narration.voice), `Beat ${beat.id}: unbekannte Stimme`);
+    assert.ok(
+      beat.narration.instructions?.length > 20,
+      `Beat ${beat.id}: Sprechanweisung fehlt oder ist zu knapp`,
+    );
+  }
+});
+
 test("verwiesene Module stammen aus der bekannten Menge", () => {
   const known = new Set(["routeMap", "europeFuse", "dominoes", "carViewer"]);
   for (const beat of BEATS) {
@@ -348,11 +377,22 @@ Expected: FAIL — `Cannot find module '../web/src/beats.js'`.
 
 ```js
 /**
- * ALLE Inhalte der Praesentation als Daten. Keine Logik.
+ * ALLE Inhalte der Praesentation als Daten - plus zwei kleine
+ * Auswertungshelfer am Dateiende. Keine Zustandslogik, kein DOM.
  *
  * Texte sind gebunden an die verbindliche Faktenliste in
  * docs/superpowers/specs/2026-07-25-sarajevo-cinematic-design.md, Abschnitt 4.
  * Wer hier Texte aendert, braucht keine 3D-Kenntnisse.
+ *
+ * WENN DU HIER TEXTE AENDERST:
+ *  1. Danach `npm test` laufen lassen. Ein vergessenes `+` am Zeilenende
+ *     oder ein fehlendes Anfuehrungszeichen ist ein Syntaxfehler, der die
+ *     GANZE Praesentation lahmlegt - der Test faengt das sofort.
+ *  2. Aenderst du eine Uhrzeit, dann an ALLEN DREI Stellen des Beats:
+ *     `clock`, die Zeitangabe am Anfang von `board.heading` und den
+ *     gesprochenen Zeit-Satz am Anfang von `narration.text`. Die ersten
+ *     beiden prueft ein Test, den dritten kann keiner pruefen.
+ *  3. Unterhalb des BEATS-Arrays nichts anfassen.
  *
  * clock:     historische Uhrzeit, null wo das Zeitprotokoll keine nennt
  * shots:     Blender-Shots in Abspielreihenfolge. duration = redaktioneller
@@ -680,7 +720,7 @@ export function nextClockAfter(index) {
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `node --test tests/beats.test.js`
-Expected: PASS — `# pass 11`, `# fail 0`.
+Expected: PASS — `# pass 13`, `# fail 0`.
 
 - [ ] **Step 5: Commit**
 
@@ -824,6 +864,43 @@ test("setProgress() begrenzt auf 0..1", () => {
   assert.equal(p.state.progress, 0);
 });
 
+test("beatProgress startet bei 0 und erreicht am Beat-Ende 1", () => {
+  const p = createPresenter(BEATS);
+  p.goTo(1); // zwei Shots, je 5 s
+  assert.equal(p.state.beatProgress, 0);
+  p.setProgress(1);
+  p.advanceShot();
+  p.setProgress(1);
+  assert.equal(p.state.beatProgress, 1);
+});
+
+test("beatProgress springt beim Shot-Wechsel NICHT zurueck", () => {
+  // Regressionstest: shot-relativer Fortschritt liess die historische Uhr
+  // beim Shot-Wechsel rueckwaerts springen. Sie muss monoton laufen.
+  const p = createPresenter(BEATS);
+  p.goTo(1);
+  const verlauf = [];
+  p.setProgress(0.5);
+  verlauf.push(p.state.beatProgress); // 2,5 s von 10 s
+  p.setProgress(1);
+  verlauf.push(p.state.beatProgress); // 5 s von 10 s
+  p.advanceShot();
+  verlauf.push(p.state.beatProgress); // weiterhin 5 s von 10 s
+  p.setProgress(0.5);
+  verlauf.push(p.state.beatProgress); // 7,5 s von 10 s
+  assert.deepEqual(verlauf, [0.25, 0.5, 0.5, 0.75]);
+  for (let i = 1; i < verlauf.length; i++) {
+    assert.ok(verlauf[i] >= verlauf[i - 1], `Ruecksprung bei Index ${i}`);
+  }
+});
+
+test("beatProgress ist bei einem Beat mit nur einem Shot der Shot-Fortschritt", () => {
+  const p = createPresenter(BEATS);
+  p.goTo(2); // ein Shot, 20 s
+  p.setProgress(0.4);
+  assert.equal(p.state.beatProgress, 0.4);
+});
+
 test("toggleOverview() schaltet die Kapiteluebersicht", () => {
   const p = createPresenter(BEATS);
   p.toggleOverview();
@@ -912,10 +989,30 @@ export function createPresenter(beats) {
 
   const listeners = new Set();
 
+  /**
+   * Fortschritt ueber den GANZEN Beat, nicht nur den laufenden Shot.
+   *
+   * Das ist die Groesse, die die historische Uhr braucht: sie interpoliert
+   * von der Zeit dieses Beats zur Zeit des naechsten. Wuerde man ihr den
+   * shot-relativen `progress` geben, liefe sie in jedem Shot die volle
+   * Strecke ab und spraenge beim Shot-Wechsel zurueck - und alle fuenf
+   * Beats mit sichtbarer Uhr haben mehr als einen Shot.
+   */
+  const beatProgress = () => {
+    const shots = beats[index].shots;
+    const total = shots.reduce((sum, shot) => sum + shot.duration, 0);
+    if (total <= 0) return 0;
+    const done = shots
+      .slice(0, shotIndex)
+      .reduce((sum, shot) => sum + shot.duration, 0);
+    return Math.min(1, (done + shots[shotIndex].duration * progress) / total);
+  };
+
   const snapshot = () => ({
     index,
     shotIndex,
     progress,
+    beatProgress: beatProgress(),
     started,
     paused,
     blackout,
@@ -1022,7 +1119,7 @@ export function createPresenter(beats) {
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `node --test tests/presenter.test.js`
-Expected: PASS — `# pass 20`, `# fail 0`.
+Expected: PASS — `# pass 23`, `# fail 0`.
 
 - [ ] **Step 5: Commit**
 
@@ -2388,7 +2485,9 @@ let lastIndex = -1;
 let lastPaused = false;
 
 presenter.subscribe((state) => {
-  clock.update(state.index, state.progress);
+  // beatProgress, nicht progress: die Uhr laeuft ueber den ganzen Beat.
+  // Mit dem shot-relativen Wert spraenge sie bei jedem Shot-Wechsel zurueck.
+  clock.update(state.index, state.beatProgress);
   chapters.update(state.index);
   overview.update(state.overview, state.index);
   status.update(state);

@@ -74,6 +74,35 @@ test("quoteAfter setzt ein Zitat auf der Tafel voraus - kein Text doppelt gepfle
   }
 });
 
+test("die Uhrzeit auf der Tafel stimmt mit dem clock-Feld ueberein", () => {
+  // Jede Uhrzeit steht pro Beat an drei Stellen: clock, am Anfang von
+  // board.heading und als gesprochener Satz in narration.text. Die ersten
+  // beiden sind maschinell pruefbar - der dritte nicht (deutsche Zahlwoerter).
+  for (const beat of BEATS) {
+    if (beat.clock === null) continue;
+    const gefunden = /^(\d{2}:\d{2})/.exec(beat.board.heading);
+    assert.ok(gefunden, `Beat ${beat.id}: board.heading beginnt nicht mit einer Uhrzeit`);
+    assert.equal(
+      gefunden[1],
+      beat.clock,
+      `Beat ${beat.id}: Tafel sagt ${gefunden[1]}, clock sagt ${beat.clock}`,
+    );
+  }
+});
+
+test("jeder Beat hat Stimme und Sprechanweisung fuer die Sprachsynthese", () => {
+  // Phase P1 gibt instructions direkt an die Sprachsynthese weiter. Fehlt der
+  // Wert, klingt der Beat still falsch statt laut zu scheitern.
+  const stimmen = new Set(["narrator", "quote"]);
+  for (const beat of BEATS) {
+    assert.ok(stimmen.has(beat.narration.voice), `Beat ${beat.id}: unbekannte Stimme`);
+    assert.ok(
+      beat.narration.instructions?.length > 20,
+      `Beat ${beat.id}: Sprechanweisung fehlt oder ist zu knapp`,
+    );
+  }
+});
+
 test("verwiesene Module stammen aus der bekannten Menge", () => {
   const known = new Set(["routeMap", "europeFuse", "dominoes", "carViewer"]);
   for (const beat of BEATS) {

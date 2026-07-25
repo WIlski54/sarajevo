@@ -1,9 +1,20 @@
 /**
- * ALLE Inhalte der Praesentation als Daten. Keine Logik.
+ * ALLE Inhalte der Praesentation als Daten - plus zwei kleine
+ * Auswertungshelfer am Dateiende. Keine Zustandslogik, kein DOM.
  *
  * Texte sind gebunden an die verbindliche Faktenliste in
  * docs/superpowers/specs/2026-07-25-sarajevo-cinematic-design.md, Abschnitt 4.
  * Wer hier Texte aendert, braucht keine 3D-Kenntnisse.
+ *
+ * WENN DU HIER TEXTE AENDERST:
+ *  1. Danach `npm test` laufen lassen. Ein vergessenes `+` am Zeilenende
+ *     oder ein fehlendes Anfuehrungszeichen ist ein Syntaxfehler, der die
+ *     GANZE Praesentation lahmlegt - der Test faengt das sofort.
+ *  2. Aenderst du eine Uhrzeit, dann an ALLEN DREI Stellen des Beats:
+ *     `clock`, die Zeitangabe am Anfang von `board.heading` und den
+ *     gesprochenen Zeit-Satz am Anfang von `narration.text`. Die ersten
+ *     beiden prueft ein Test, den dritten kann keiner pruefen.
+ *  3. Unterhalb des BEATS-Arrays nichts anfassen.
  *
  * clock:     historische Uhrzeit, null wo das Zeitprotokoll keine nennt
  * shots:     Blender-Shots in Abspielreihenfolge. duration = redaktioneller

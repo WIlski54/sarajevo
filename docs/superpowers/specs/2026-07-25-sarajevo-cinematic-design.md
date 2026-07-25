@@ -56,10 +56,10 @@ dauerhaft im Bild und wandert von 09:25 auf 10:48.
 Erzähleinheit, die der Presenter am Stück auslöst; er kann aus mehreren
 Blender-Shots bestehen (Beat 2 etwa aus Anfahrt, Wurf, Detonation, Nachhall).
 Die vierzehn Shots verteilen sich auf die acht Beats. Daraus ergibt sich auch die
-Zeitrechnung: **5–6 Minuten gerendertes Filmmaterial**, die zusammen mit den
-interaktiven Modulen, den Texttafeln und den Sprechpausen ein Gesamterlebnis von
-**8–10 Minuten** ergeben — ohne die Zeit, die der Lehrer selbst durch Anhalten
-und Erklären hinzufügt.
+Zeitrechnung: **rund 4:30–6:00 gerendertes Filmmaterial** (redaktioneller Stand
+nach Phase P0: 4:38), das zusammen mit den interaktiven Modulen, den Texttafeln
+und den Sprechpausen ein Gesamterlebnis von **8–10 Minuten** ergibt — ohne die
+Zeit, die der Lehrer selbst durch Anhalten und Erklären hinzufügt.
 
 ### Beat 0 — Prolog: Vidovdan
 
@@ -311,8 +311,8 @@ interaktive Karte lebt in three.js).
 diesem Bildstil (Volumetrics, Bloom, DOF) ist der Qualitätsgewinn gering, die
 Renderzeit aber ein bis zwei Größenordnungen höher.
 
-**Renderbudget:** ~5–6 Minuten Film ≈ 9.000–11.000 Frames bei 0,5–1,5 s/Frame
-→ 2–4,5 Stunden Endrender, plus Testiterationen. Läuft über Nacht.
+**Renderbudget:** rund 4:30–6:00 Film ≈ 8.000–11.000 Frames bei 0,5–1,5 s/Frame
+→ 1,5–4,5 Stunden Endrender, plus Testiterationen. Läuft über Nacht.
 
 ### Bekannte API-Fallen Blender 5.1 (aus der Dinos-Pipeline)
 

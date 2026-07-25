@@ -1,0 +1,12 @@
+{
+  "name": "sarajevo-1914",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Cinematic Live-Praesentation zum Attentat von Sarajevo, 28. Juni 1914",
+  "scripts": {
+    "test": "node --test \"tests/**/*.test.js\"",
+    "check:media": "node tools/check_media.js",
+    "serve": "python tools/serve.py"
+  }
+}

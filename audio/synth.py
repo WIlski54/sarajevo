@@ -337,6 +337,202 @@ def snare_roll(dur: float, seed: int = 16) -> np.ndarray:
     return fade(normalize(out, 0.5), 0.2, 0.3)
 
 
+def schlacht_fern(dur: float, seed: int = 21) -> np.ndarray:
+    """Ferne Schlacht - Hufe, Metall, gedaempfte Rufe.
+
+    Fuer die Erwaehnung des Kosovo Polje im Prolog. Bewusst weit weg und
+    stark tiefpassgefiltert: es ist eine Erinnerung, kein Ereignis. Genau
+    deshalb braucht die Praesentation kein Bild davon.
+    """
+    g = rng(seed)
+    out = silence(dur)
+
+    # Hufe: unregelmaessige Gruppen dumpfer Schlaege
+    at = 0.4
+    while at < dur - 0.5:
+        for k in range(g.integers(2, 5)):
+            n = int(SR * 0.13)
+            hu = g.normal(0, 1, n).astype(np.float32) * np.exp(-t(0.13) * 46)
+            place(out, lowpass(hu, 420), at + k * 0.115, 0.5)
+        at += float(g.uniform(0.7, 1.6))
+
+    # Metall: sehr kurze helle Anschlaege, weit hinten
+    for _ in range(int(dur * 2.5)):
+        n = int(SR * 0.09)
+        kl = g.normal(0, 1, n).astype(np.float32) * np.exp(-t(0.09) * 70)
+        place(out, bandpass(kl, 1100, 3400), float(g.uniform(0, dur - 0.2)), 0.22)
+
+    # Rufe: Rauschband mit langsamer Formantwanderung
+    stimmen = bandpass(g.normal(0, 1, len(out)).astype(np.float32), 300, 1100)
+    zeit = t(dur)
+    stimmen *= (0.4 + 0.6 * np.abs(np.sin(2 * np.pi * 0.11 * zeit))).astype(np.float32)
+    out += stimmen * 0.30
+
+    # Alles zusammen weit weg schieben: Tiefpass plus langer Hall
+    out = lowpass(out, 900)
+    return fade(reverb(normalize(out, 0.42), 2.6, 0.55), 1.2, 1.5)
+
+
+def klacken(seed: int = 22) -> np.ndarray:
+    """Metall gegen Metall - die Granate am Laternenpfahl.
+
+    Ein einzelnes, hartes, hell mitschwingendes Klacken. Es sitzt genau auf
+    dem Wort und ist der Auftakt zu den zehn Sekunden.
+    """
+    g = rng(seed)
+    dur = 1.1
+    zeit = t(dur)
+    anschlag = g.normal(0, 1, len(zeit)).astype(np.float32) * np.exp(-zeit * 260)
+    out = highpass(anschlag, 1400) * 0.9
+    # Mitschwingende Teiltoene des Gusseisenmasts
+    for f, d, a in ((1180, 9.0, 0.5), (2340, 13.0, 0.28), (3910, 18.0, 0.14)):
+        out += np.sin(2 * np.pi * f * zeit).astype(np.float32) * np.exp(-zeit * d) * a
+    return fade(normalize(out, 0.85), 0.0004, 0.25)
+
+
+def telegraf(dur: float, seed: int = 23) -> np.ndarray:
+    """Morsetaste. Fuer die Julikrise - die Ultimaten gingen per Telegraf.
+
+    Historisch praezise und akustisch praegnant: das Ticken traegt die
+    Vorstellung von Depeschen, die zwischen Hauptstaedten hin und her gehen,
+    ohne dass ein Wort darueber fallen muss.
+    """
+    g = rng(seed)
+    out = silence(dur)
+    at = 0.0
+    while at < dur - 0.2:
+        # Punkte und Striche in unregelmaessigen Gruppen
+        for _ in range(int(g.integers(3, 8))):
+            lang = g.random() < 0.32
+            laenge = 0.115 if lang else 0.048
+            n = int(SR * laenge)
+            ton = np.sin(2 * np.pi * 720 * t(laenge)).astype(np.float32)
+            ton *= adsr(n, 0.002, 0.004, 0.9, 0.012)
+            klick = g.normal(0, 1, n).astype(np.float32) * np.exp(-t(laenge) * 300)
+            place(out, ton * 0.55 + highpass(klick, 2200) * 0.35, at, 0.8)
+            at += laenge + 0.045
+            if at > dur - 0.2:
+                break
+        at += float(g.uniform(0.35, 0.9))
+    return fade(normalize(out, 0.6), 0.05, 0.3)
+
+
+def ruf(dur: float = 1.6, seed: int = 24) -> np.ndarray:
+    """Ein Ruf im Freien, ohne verstaendliches Wort.
+
+    Fuer Harrachs Zuruf an den Chauffeur. Formantgefiltertes Rauschen mit
+    Tonhoehenbogen - man hoert einen Menschen rufen, nicht was er sagt.
+    """
+    g = rng(seed)
+    zeit = t(dur)
+    grund = 155 * (1 + 0.35 * np.sin(np.pi * zeit / dur))
+    stimme = signal.sawtooth(2 * np.pi * np.cumsum(grund) / SR).astype(np.float32)
+    out = np.zeros_like(stimme)
+    for f0, breite, amp in ((620, 140, 1.0), (1180, 200, 0.55), (2500, 400, 0.22)):
+        out += bandpass(stimme, f0 - breite, f0 + breite) * amp
+    hauch = highpass(g.normal(0, 1, len(zeit)).astype(np.float32), 2600) * 0.10
+    huell = adsr(len(zeit), 0.09, 0.18, 0.65, dur * 0.42)
+    return fade(reverb(normalize((out + hauch) * huell, 0.6), 1.1, 0.28), 0.02, 0.2)
+
+
+def artillerie_fern(dur: float, seed: int = 25) -> np.ndarray:
+    """Ferner Artilleriedonner. Fuer den Uebergang zur Westfront.
+
+    Nur Tiefen, kein Knall: aus mehreren Kilometern hoert man von einem
+    Einschlag ausschliesslich das Grollen. Das macht ihn bedrohlicher als
+    jedes scharfe Geraeusch.
+    """
+    g = rng(seed)
+    out = silence(dur)
+    at = 0.3
+    while at < dur - 1.0:
+        laenge = float(g.uniform(1.4, 2.6))
+        zeit = t(laenge)
+        f = g.uniform(28, 44) * (1 + 0.5 * np.exp(-zeit * 3))
+        grollen = np.sin(2 * np.pi * np.cumsum(f) / SR).astype(np.float32)
+        koerper = g.normal(0, 1, len(zeit)).astype(np.float32)
+        mix = grollen * 0.8 + lowpass(koerper, 160) * 0.6
+        mix *= (np.exp(-zeit * 1.1) * (1 - np.exp(-zeit * 14))).astype(np.float32)
+        place(out, mix, at, float(g.uniform(0.5, 1.0)))
+        at += float(g.uniform(0.9, 2.4))
+    return fade(normalize(lowpass(out, 320), 0.7), 0.6, 1.2)
+
+
+def platschen(dur: float = 2.2, seed: int = 26) -> np.ndarray:
+    """Ein Koerper faellt in sehr flaches Wasser.
+
+    Cabrinovic springt in die Miljacka - die an dieser Stelle nur wenige
+    Zentimeter tief ist. Deshalb klatscht es und gluckert, es rauscht nicht.
+    """
+    g = rng(seed)
+    zeit = t(dur)
+    schlag = g.normal(0, 1, len(zeit)).astype(np.float32) * np.exp(-zeit * 22)
+    out = bandpass(schlag, 250, 4200) * 0.9
+    for k in range(14):
+        n = int(SR * 0.16)
+        tropf = g.normal(0, 1, n).astype(np.float32) * np.exp(-t(0.16) * 34)
+        place(out, bandpass(tropf, 700, 3600), float(g.uniform(0.12, dur * 0.7)), 0.28)
+    return fade(normalize(out, 0.72), 0.001, 0.4)
+
+
+def fluss(dur: float, seed: int = 27) -> np.ndarray:
+    """Leises, flaches Fliessgewaesser als Grundbett am Appelkai."""
+    g = rng(seed)
+    grund = g.normal(0, 1, int(SR * dur)).astype(np.float32)
+    out = bandpass(grund, 400, 5200)
+    zeit = t(dur)
+    out *= (0.75 + 0.25 * np.sin(2 * np.pi * 0.09 * zeit + 0.7)).astype(np.float32)
+    return fade(normalize(out, 0.22), 1.0, 1.0)
+
+
+def voegel(dur: float, seed: int = 28) -> np.ndarray:
+    """Einzelne Vogelrufe. Fuer den erwachenden Morgen im Prolog.
+
+    Sparsam: drei, vier Rufe reichen, um Tageszeit und Stille zu setzen.
+    Eine dichte Vogelkulisse wuerde idyllisch klingen, und idyllisch ist
+    dieser Morgen nicht.
+    """
+    g = rng(seed)
+    out = silence(dur)
+    for _ in range(max(2, int(dur / 7))):
+        beginn = float(g.uniform(0.5, dur - 1.2))
+        for k in range(int(g.integers(2, 4))):
+            laenge = float(g.uniform(0.07, 0.15))
+            zeit = t(laenge)
+            f = g.uniform(2100, 3800) * (1 + 0.22 * np.sin(np.pi * zeit / laenge))
+            ruf_ = np.sin(2 * np.pi * np.cumsum(f) / SR).astype(np.float32)
+            ruf_ *= adsr(len(zeit), 0.006, 0.02, 0.6, laenge * 0.5)
+            place(out, ruf_, beginn + k * float(g.uniform(0.13, 0.26)), 0.30)
+    return fade(reverb(normalize(out, 0.34), 1.3, 0.25), 0.1, 0.4)
+
+
+def schritte(dur: float, seed: int = 29) -> np.ndarray:
+    """Schritte auf Stein. Bahnsteig und Rathaussaal."""
+    g = rng(seed)
+    out = silence(dur)
+    at = float(g.uniform(0.2, 0.6))
+    while at < dur - 0.4:
+        n = int(SR * 0.14)
+        tritt = g.normal(0, 1, n).astype(np.float32) * np.exp(-t(0.14) * 62)
+        place(out, bandpass(tritt, 180, 2600), at, float(g.uniform(0.5, 0.9)))
+        at += float(g.uniform(0.42, 0.56))
+    return fade(normalize(out, 0.4), 0.1, 0.4)
+
+
+def pfiff(seed: int = 30) -> np.ndarray:
+    """Lokpfeife. Zwei Toene, wie eine Dampflokpfeife sie hat."""
+    dur = 1.9
+    zeit = t(dur)
+    huell = adsr(len(zeit), 0.08, 0.25, 0.75, 0.8)
+    out = np.zeros_like(zeit)
+    for f, amp in ((880, 1.0), (1170, 0.8), (1760, 0.35), (2340, 0.18)):
+        vib = 1 + 0.006 * np.sin(2 * np.pi * 5.5 * zeit)
+        out += np.sin(2 * np.pi * f * np.cumsum(vib) / SR).astype(np.float32) * amp
+    rauschen = rng(seed).normal(0, 1, len(zeit)).astype(np.float32)
+    out += highpass(rauschen, 3000) * 0.12
+    return fade(reverb(normalize(out * huell, 0.6), 1.8, 0.3), 0.05, 0.5)
+
+
 def shot(seed: int = 17) -> np.ndarray:
     """Zwei Schuesse, bewusst abstrahiert: kurzer Transient, Koerper, Nachhall
     im Strassenraum. Kein Realismus - ein Zeichen."""

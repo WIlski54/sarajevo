@@ -382,6 +382,34 @@ melodische Orchestrierung nicht. Der Score ist deshalb bewusst flächig und
 sparsam angelegt. Wenn später mehr gewünscht ist, können CC0-Samples ergänzt
 werden — mit ausdrücklicher Zustimmung und Lizenznachweis.
 
+### Diegetische Geräuschkulisse (verbindlich)
+
+Der Ton ist nicht nur Musik und Stimme. **Was der Text beschreibt, soll man
+hören** — auch das, was gar nicht im Bild ist. Eine erwähnte Schlacht kann als
+Klang präsent sein, ohne dass ein Bild davon nötig wäre. Das ist die
+konsequente Fortsetzung der andeutenden Erzählweise aus §3.
+
+Verbindlich umzusetzende Stellen:
+
+| Beat | Anlass im Text | Klang |
+|---|---|---|
+| 0 | „die Schlacht auf dem Kosovo Polje" | Ferne, gespenstische Schlachtentextur: Hufe, Metall, gedämpfte Rufe — weit weg, wie eine Erinnerung |
+| 0 | Morgen über der Stadt | Erwachende Stadt: einzelne Vögel, ein Karren, eine ferne Glocke |
+| 1 | Bahnhof, Zug hält | Lokdampf, Pfiff, Schritte auf dem Bahnsteig, Blaskapelle |
+| 2 | „schlägt eine Handgranate gegen einen Laternenpfahl" | **Metallisches Klacken** — genau auf das Wort, vor dem Ticken |
+| 2 | „zehn Sekunden" | Der tickende Zünder (bereits umgesetzt) |
+| 2 | „springt in die Miljacka" | Wasser, flach und platschend — der Fluss ist nur zentimetertief |
+| 3 | Rathaus, Begrüßungsrede | Halliger Saal, Papier, Schritte auf Stein, Gemurmel |
+| 4 | „er sei falsch abgebogen" | Rufen im Freien, Bremsen, Rückwärtsrollen |
+| 5 | Der Wagen steht | Motor im Standgas, dann Abstellen — danach nur Herzschlag |
+| 6 | Die Julikrise-Daten | **Telegrafenklicken** — die Ultimaten gingen per Telegraf. Historisch präzise und akustisch prägnant |
+| 6 | Übergang zur Westfront | Ferner Artilleriedonner, Marschtritt |
+
+**Umsetzungsregel:** Die Einsatzzeiten werden nicht geraten. `score.py`
+schätzt sie aus der Zeichenposition der Phrase im Sprechertext, skaliert mit
+der gemessenen Sprechdauer. Das trifft auf etwa eine Sekunde genau — genug,
+damit ein Klang auf seinem Wort liegt und nicht daneben.
+
 ### Mischung
 
 Vier Web-Audio-Busse: Stimme, Score, Geräusche, Atmosphäre, dazu ein Master. Der

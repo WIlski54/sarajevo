@@ -159,6 +159,23 @@ el("stage").addEventListener("click", (event) => {
   presenter.next();
 });
 
+/* ---------- Rueckkehr aus dem Hintergrund ---------- */
+
+// Chrome pausiert stummes Video in unsichtbaren Tabs, um Strom zu sparen:
+//   AbortError: video-only background media was paused to save power
+// Ohne diesen Handler bleibt das Bild stehen, sobald der Vortragende einmal
+// das Fenster wechselt - und kommt nicht von selbst zurueck. Der Ton laeuft
+// weiter (er hat eine Tonspur und ist davon nicht betroffen), Bild und Ton
+// wuerden also auseinanderlaufen.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible") return;
+  if (!presenter.state.started) return;
+  // Eine bewusst gesetzte Pause bleibt eine Pause.
+  if (presenter.state.paused) return;
+  stage.resume();
+  audio.resume();
+});
+
 /* ---------- Start ---------- */
 
 el("startbutton").addEventListener("click", () => {
@@ -187,5 +204,6 @@ window.__zustand = () => ({
   shot: presenter.state.shotIndex,
   pausiert: presenter.state.paused,
   uhr: el("clock").textContent,
+  bild: stage.debug(),
   ton: audio.debug(),
 });

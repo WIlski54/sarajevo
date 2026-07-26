@@ -49,6 +49,11 @@ export function describePlaceholder(beat, shot) {
 export function createVideoStage(elements, probe = probeFile) {
   const { video: videoLayer, placeholder } = elements;
   let current = null;
+  // Grund des letzten fehlgeschlagenen play(). Ein verschluckter Fehler ist
+  // hier fatal: "das Video laeuft nicht" ohne Ursache ist nicht
+  // diagnostizierbar, und der Platzhalter-Rueckfall laesst es harmlos
+  // aussehen. Wird ueber debug() lesbar gemacht.
+  let letzterFehler = null;
 
   const clear = () => {
     if (current) {
@@ -107,9 +112,14 @@ export function createVideoStage(elements, probe = probeFile) {
       videoLayer.replaceChildren(element);
       videoLayer.hidden = false;
       current = element;
-      await element.play().catch(() => {
-        // Autoplay verweigert: Standbild statt Absturz.
-      });
+      letzterFehler = null;
+      try {
+        await element.play();
+      } catch (err) {
+        // Autoplay verweigert oder Tab im Hintergrund: Standbild statt
+        // Absturz - aber der Grund wird festgehalten, nicht verschluckt.
+        letzterFehler = `${err.name}: ${err.message}`;
+      }
       return { kind: "video", duration: shot.duration };
     },
 
@@ -118,7 +128,22 @@ export function createVideoStage(elements, probe = probeFile) {
     },
 
     resume() {
-      current?.play().catch(() => {});
+      current?.play().catch((err) => {
+        letzterFehler = `${err.name}: ${err.message}`;
+      });
+    },
+
+    /** Lesbarer Zustand fuer die Verifikation. Reine Auskunft. */
+    debug() {
+      return {
+        quelle: current ? current.src.split("/").pop() : null,
+        laeuft: current ? !current.paused : null,
+        position: current ? Number(current.currentTime.toFixed(2)) : null,
+        bereit: current ? current.readyState : null,
+        netz: current ? current.networkState : null,
+        mediaFehler: current?.error ? current.error.code : null,
+        playFehler: letzterFehler,
+      };
     },
 
     dispose: clear,

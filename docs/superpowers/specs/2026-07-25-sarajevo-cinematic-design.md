@@ -311,8 +311,16 @@ interaktive Karte lebt in three.js).
 diesem Bildstil (Volumetrics, Bloom, DOF) ist der Qualitätsgewinn gering, die
 Renderzeit aber ein bis zwei Größenordnungen höher.
 
-**Renderbudget:** rund 4:30–6:00 Film ≈ 8.000–11.000 Frames bei 0,5–1,5 s/Frame
-→ 1,5–4,5 Stunden Endrender, plus Testiterationen. Läuft über Nacht.
+**Renderbudget, gemessen statt geschätzt:** Der Referenz-Shot (510 Frames,
+1920×1080, Endqualität mit Volumetrics und Motion Blur) brauchte **0,44 s pro
+Frame**, insgesamt 3,7 Minuten. Hochgerechnet auf die 318 s Film ≈ 9.540 Frames
+ergibt das **rund 70 Minuten** für den kompletten Endrender.
+
+Das ist deutlich weniger als die ursprünglich geschätzten 1,5–4,5 Stunden. Die
+Konsequenz ist keine Zeitersparnis, sondern mehr Freiheit: ein kompletter
+Neurender aller Shots ist damit eine Kaffeepause und kein Nachtlauf — Änderungen
+am Look sind also billiger als geplant. Die Schätzung stand vor dem ersten
+echten Render und war zu pessimistisch.
 
 ### Bekannte API-Fallen Blender 5.1 (aus der Dinos-Pipeline)
 

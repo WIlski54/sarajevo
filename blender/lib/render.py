@@ -79,51 +79,102 @@ def setup_scene(scene: bpy.types.Scene, quality: str = "still") -> None:
     scene.view_settings.exposure = -2.1
 
 
-def setup_compositor(scene: bpy.types.Scene) -> None:
-    """Bloom, Korn und Vignette.
+def _menu_or_value(sock, wert):
+    """Setzt einen Socket. Menue-Sockets werden schreibweise-unempfindlich
+    gegen die gueltige Aufzaehlung abgeglichen.
 
-    In 5.1 haengt der Compositor an scene.compositing_node_group; use_nodes
-    ist deprecated. Der Glare-Node ist vollstaendig socket-basiert - der
-    Typ wird ueber inputs["Type"] gesetzt, nicht ueber ein Property.
+    Grund: die Glare-Typen heissen in 5.1 'Bloom', 'Fog Glow', 'Simple Star' -
+    in Klarschrift mit Leerzeichen, nicht als BLOOM-Konstanten. Wer aus
+    Gewohnheit Grossbuchstaben schreibt, bekommt einen Enum-Fehler oder,
+    schlimmer, einen stillen Rueckfall auf 'Streaks'.
+    """
+    if isinstance(wert, str):
+        prop = sock.bl_rna.properties.get("default_value")
+        erlaubt = [e.identifier for e in getattr(prop, "enum_items", [])]
+        if erlaubt:
+            for kandidat in erlaubt:
+                if kandidat.lower() == wert.lower():
+                    sock.default_value = kandidat
+                    return kandidat
+            return f"nicht gefunden, erlaubt: {erlaubt}"
+    try:
+        sock.default_value = wert
+        return sock.default_value
+    except (TypeError, ValueError) as err:
+        return f"FEHLER: {err}"
+
+
+def setup_compositor(scene: bpy.types.Scene, laut: bool = False) -> None:
+    """Bloom und eine Spur Kontrast.
+
+    AUFBAU, gemessen statt geraten. In Blender 5.1 haengt der Compositor an
+    `scene.compositing_node_group`, und die Quelle des Bildes ist ein
+    `CompositorNodeRLayers`-Knoten INNERHALB der Gruppe. Der Gruppeneingang
+    wird NICHT vom Render gefuettert.
+
+    Belegt an einer Minimalszene, mittlere Bildhelligkeit:
+        ohne Compositor              0,3600
+        RLayers -> GroupOutput       0,3600
+        RLayers -> Glare -> Output   0,3600
+        GroupInput -> Glare -> Out   0,0003   <- schwarz
+
+    Der letzte Aufbau war der erste Versuch. Er wirft keinen Fehler, er
+    rendert nur schwarz - deshalb hat es so lange gedauert, ihn zu finden.
+
+    `CompositorNodeComposite` existiert in 5.1 nicht mehr; die Senke ist
+    `NodeGroupOutput`.
+
+    Vignette und Filmkorn bewusst NICHT hier: die macht die Web-Schicht im
+    EffectComposer. Dort kostet eine Aenderung Sekunden, hier kostet sie
+    einen kompletten Neurender.
     """
     tree = bpy.data.node_groups.new("Post", "CompositorNodeTree")
-    scene.compositing_node_group = tree
+    tree.interface.new_socket("Image", in_out="OUTPUT", socket_type="NodeSocketColor")
 
     nodes, links = tree.nodes, tree.links
     nodes.clear()
 
-    render = nodes.new("NodeGroupInput")
-    render.location = (-600, 0)
-    if not tree.interface.items_tree:
-        tree.interface.new_socket("Image", in_out="INPUT", socket_type="NodeSocketColor")
-        tree.interface.new_socket("Image", in_out="OUTPUT", socket_type="NodeSocketColor")
+    quelle = nodes.new("CompositorNodeRLayers")
+    quelle.location = (-600, 0)
 
     glare = nodes.new("CompositorNodeGlare")
-    glare.location = (-350, 0)
-    # Defaults sind 'Streaks' mit niedriger Schwelle: das ergibt
-    # Sternkreuze und flutet das ganze Bild. Bloom mit hoher Schwelle.
-    for name, value in (
-        ("Type", "BLOOM"),
+    glare.location = (-320, 0)
+
+    # Der Standardtyp ist "Streaks" mit Threshold 1,0: das ergibt
+    # Sternkreuze an jedem Spitzlicht und flutet das ganze Bild. Bloom mit
+    # hoher Schwelle und schwacher Staerke - nur die echten Lichter glimmen.
+    gesetzt = {}
+    for name, wert in (
+        ("Type", "Bloom"),
         ("Threshold", 10.0),
         ("Strength", 0.12),
         ("Size", 0.15),
+        ("Quality", "High"),
     ):
-        if name in glare.inputs:
-            try:
-                glare.inputs[name].default_value = value
-            except (TypeError, ValueError):
-                pass
+        if name not in glare.inputs:
+            continue
+        gesetzt[name] = _menu_or_value(glare.inputs[name], wert)
 
-    grain = nodes.new("CompositorNodeBrightContrast")
-    grain.location = (-120, 0)
-    grain.inputs["Contrast"].default_value = 0.04
+    # Ein stiller Rueckfall auf Streaks waere schlimmer als ein Abbruch:
+    # das Bild saehe falsch aus und niemand wuesste warum.
+    if str(gesetzt.get("Type", "")).lower() != "bloom":
+        print(f"  WARNUNG: Glare-Type ist '{gesetzt.get('Type')}', nicht Bloom - "
+              f"das Bild bekommt Sternkreuze statt Bloom.")
+    if laut:
+        print(f"  Compositor: Glare {gesetzt}")
 
-    out = nodes.new("NodeGroupOutput")
-    out.location = (150, 0)
+    kontrast = nodes.new("CompositorNodeBrightContrast")
+    kontrast.location = (-80, 0)
+    kontrast.inputs["Contrast"].default_value = 0.04
 
-    links.new(render.outputs[0], glare.inputs[0])
-    links.new(glare.outputs[0], grain.inputs[0])
-    links.new(grain.outputs[0], out.inputs[0])
+    ausgang = nodes.new("NodeGroupOutput")
+    ausgang.location = (160, 0)
+
+    links.new(quelle.outputs["Image"], glare.inputs[0])
+    links.new(glare.outputs[0], kontrast.inputs[0])
+    links.new(kontrast.outputs[0], ausgang.inputs[0])
+
+    scene.compositing_node_group = tree
 
 
 def write_still(scene: bpy.types.Scene, path: str) -> None:
@@ -148,5 +199,12 @@ def write_video(scene: bpy.types.Scene, path: str) -> None:
     scene.render.ffmpeg.constant_rate_factor = "HIGH"
     scene.render.ffmpeg.ffmpeg_preset = "GOOD"
     scene.render.ffmpeg.audio_codec = "NONE"
+
+    # Der Pfad MUSS die Endung tragen. Ohne sie haengt Blender den
+    # Bildbereich an und schreibt "shot_030001-0510.mp4" - die Praesentation
+    # sucht aber "shot_03.mp4" und faellt still auf den Platzhalter zurueck.
+    if not path.lower().endswith(".mp4"):
+        path = f"{path}.mp4"
     scene.render.filepath = path
     bpy.ops.render.render(animation=True)
+    return path

@@ -78,6 +78,10 @@ def main() -> None:
         "--raw", action="store_true",
         help="ohne Compositor rendern - trennt Szenenfehler von Post-Fehlern",
     )
+    parser.add_argument(
+        "--frames", type=int,
+        help="nur die ersten N Bilder rendern - schneller Pipeline-Test",
+    )
     args = parser.parse_args(argv_after_dashes())
 
     if args.list:
@@ -113,7 +117,12 @@ def main() -> None:
                 f"{time.perf_counter() - t1:.1f}s -> {ziel}"
             )
         else:
+            if args.frames:
+                scene.frame_end = min(scene.frame_end, scene.frame_start + args.frames - 1)
             ziel = VIDEO_DIR / f"shot_{nummer}.mp4"
+            if args.frames:
+                # Testlaeufe nie ueber die echte Datei schreiben
+                ziel = PROJECT_ROOT / "renders" / f"test_shot_{nummer}.mp4"
             ziel.parent.mkdir(parents=True, exist_ok=True)
             frames = scene.frame_end - scene.frame_start + 1
             print(
@@ -121,9 +130,12 @@ def main() -> None:
                 f"Aufbau {aufbau:.1f}s -> {ziel}"
             )
             t1 = time.perf_counter()
-            render_lib.write_video(scene, str(ziel.with_suffix("")))
+            geschrieben = render_lib.write_video(scene, str(ziel))
             dauer = time.perf_counter() - t1
-            print(f"  fertig in {dauer / 60:.1f} min ({dauer / frames:.2f}s pro Bild)")
+            print(
+                f"  fertig in {dauer / 60:.1f} min ({dauer / frames:.2f}s pro Bild) "
+                f"-> {geschrieben}"
+            )
 
 
 if __name__ == "__main__":

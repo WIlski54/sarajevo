@@ -41,6 +41,7 @@ export const BEATS = [
     shots: [{ file: "media/video/shot_00.mp4", duration: 37 }],
     narration: {
       file: "media/audio/vo_00.mp3",
+      score: "media/audio/score_00.mp3",
       seconds: 33.8,
       voice: "narrator",
       instructions:
@@ -76,6 +77,7 @@ export const BEATS = [
     ],
     narration: {
       file: "media/audio/vo_01.mp3",
+      score: "media/audio/score_01.mp3",
       seconds: 55.4,
       voice: "narrator",
       instructions: "Sachlich erzaehlend, leicht waermer als der Prolog.",
@@ -117,6 +119,7 @@ export const BEATS = [
     ],
     narration: {
       file: "media/audio/vo_02.mp3",
+      score: "media/audio/score_02.mp3",
       seconds: 62.2,
       voice: "narrator",
       instructions:
@@ -160,6 +163,7 @@ export const BEATS = [
     ],
     narration: {
       file: "media/audio/vo_03.mp3",
+      score: "media/audio/score_03.mp3",
       seconds: 47.4,
       voice: "narrator",
       instructions:
@@ -199,6 +203,7 @@ export const BEATS = [
     ],
     narration: {
       file: "media/audio/vo_04.mp3",
+      score: "media/audio/score_04.mp3",
       seconds: 33.9,
       voice: "narrator",
       instructions:
@@ -233,6 +238,7 @@ export const BEATS = [
     ],
     narration: {
       file: "media/audio/vo_05.mp3",
+      score: "media/audio/score_05.mp3",
       seconds: 43.3,
       voice: "narrator",
       instructions:
@@ -250,6 +256,7 @@ export const BEATS = [
         "Statthalters.",
       // Nach dem Erzaehltext wird board.quote mit der Zitatstimme gesprochen
       // (Phase P1). Der Text steht bewusst nur einmal, in board.quote.
+      quoteFile: "media/audio/vo_05_zitat.mp3",
       quoteAfter: true,
     },
     board: {
@@ -273,6 +280,7 @@ export const BEATS = [
     shots: [{ file: "media/video/shot_12.mp4", duration: 20 }],
     narration: {
       file: "media/audio/vo_06.mp3",
+      score: "media/audio/score_06.mp3",
       seconds: 43.7,
       voice: "narrator",
       instructions:
@@ -308,6 +316,7 @@ export const BEATS = [
     shots: [{ file: "media/video/shot_13.mp4", duration: 14 }],
     narration: {
       file: "media/audio/vo_07.mp3",
+      score: "media/audio/score_07.mp3",
       seconds: 47.2,
       voice: "narrator",
       instructions:

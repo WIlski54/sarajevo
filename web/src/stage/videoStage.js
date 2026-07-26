@@ -11,9 +11,11 @@
  * nur createVideoStage beruehrt das DOM.
  */
 
+import { mediaUrl } from "../mediaBase.js";
+
 /** Prueft per HEAD, ob eine Datei ausgeliefert wird. */
 export async function probeFile(file) {
-  const response = await fetch(file, { method: "HEAD" });
+  const response = await fetch(mediaUrl(file), { method: "HEAD" });
   return response.ok;
 }
 
@@ -96,7 +98,7 @@ export function createVideoStage(elements, probe = probeFile) {
       }
 
       const element = document.createElement("video");
-      element.src = source.file;
+      element.src = mediaUrl(source.file);
       element.preload = "auto";
       element.playsInline = true;
       // Ton kommt in Phase P1 aus der Web-Audio-Schicht, nicht aus dem Video.

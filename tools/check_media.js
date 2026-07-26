@@ -24,7 +24,13 @@ export function collectExpectedMedia(beats) {
       items.push({ file: shot.file, kind: "video", beat: beat.id });
     }
     if (beat.narration?.file) {
-      items.push({ file: beat.narration.file, kind: "audio", beat: beat.id });
+      items.push({ file: beat.narration.file, kind: "stimme", beat: beat.id });
+    }
+    if (beat.narration?.score) {
+      items.push({ file: beat.narration.score, kind: "score", beat: beat.id });
+    }
+    if (beat.narration?.quoteFile) {
+      items.push({ file: beat.narration.quoteFile, kind: "zitat", beat: beat.id });
     }
   }
   return items;

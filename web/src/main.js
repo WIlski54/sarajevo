@@ -7,6 +7,7 @@ import { BEATS } from "./beats.js";
 import { createPresenter } from "./presenter.js";
 import { actionForKey } from "./keymap.js";
 import { createVideoStage } from "./stage/videoStage.js";
+import { createAudioEngine } from "./audio/engine.js";
 import {
   createBoard,
   createChapterBar,
@@ -23,6 +24,7 @@ const stage = createVideoStage({
   video: el("videolayer"),
   placeholder: el("placeholder"),
 });
+const audio = createAudioEngine();
 const board = createBoard(el("board"));
 const clock = createClock(el("clock"), BEATS);
 const chapters = createChapterBar(el("chapters"), BEATS, (i) => presenter.goTo(i));
@@ -91,7 +93,12 @@ presenter.subscribe((state) => {
   if (state.index !== lastIndex) {
     lastIndex = state.index;
     board.show(presenter.beat());
-    if (state.started) showCurrentShot();
+    if (state.started) {
+      showCurrentShot();
+      // Ton haengt am Beat, nicht am Shot: die Erzaehlung laeuft ueber
+      // alle Shots eines Beats hinweg durch.
+      audio.playBeat(presenter.beat());
+    }
   }
   // Ein Shot-Wechsel braucht hier nichts: er wird ausschliesslich von
   // showCurrentShot ausgeloest, das das Video selbst schon gesetzt hat.
@@ -100,8 +107,13 @@ presenter.subscribe((state) => {
   // Sekunde, und play() im Dauerlauf waere reine Verschwendung.
   if (state.paused !== lastPaused) {
     lastPaused = state.paused;
-    if (state.paused) stage.pause();
-    else stage.resume();
+    if (state.paused) {
+      stage.pause();
+      audio.pause();
+    } else {
+      stage.resume();
+      audio.resume();
+    }
   }
 });
 
@@ -114,6 +126,7 @@ const ACTIONS = {
   replay: () => {
     presenter.replay();
     showCurrentShot();
+    audio.playBeat(presenter.beat());
   },
   blackout: () => presenter.toggleBlackout(),
   overview: () => presenter.toggleOverview(),
@@ -149,12 +162,30 @@ el("stage").addEventListener("click", (event) => {
 /* ---------- Start ---------- */
 
 el("startbutton").addEventListener("click", () => {
+  // Genau hier - und nur hier - darf der AudioContext entstehen: Browser
+  // geben Ton erst nach einer Nutzerinteraktion frei. Das ist der
+  // eigentliche Zweck des Startbildschirms.
+  audio.unlock();
+
   el("startscreen").hidden = true;
   presenter.start();
   board.show(presenter.beat());
   showCurrentShot();
+  audio.playBeat(presenter.beat());
 });
 
 // Der erste Zustandsanstoss, damit Uhr und Kapitelleiste stimmen,
 // bevor gestartet wird.
 presenter.setProgress(0);
+
+// Lesbarer Zustand fuer die Verifikation. Die Tonspuren haengen absichtlich
+// nicht im DOM (new Audio() erzeugt lose Elemente), und der Browser-Pane
+// dieser Entwicklungsumgebung liefert keine Screenshots - ohne diesen Haken
+// laesst sich nicht pruefen, ob wirklich Ton laeuft. Nur lesen, kein Steuern.
+window.__zustand = () => ({
+  beat: presenter.state.index,
+  shot: presenter.state.shotIndex,
+  pausiert: presenter.state.paused,
+  uhr: el("clock").textContent,
+  ton: audio.debug(),
+});

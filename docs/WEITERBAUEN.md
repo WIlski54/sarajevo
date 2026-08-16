@@ -16,7 +16,20 @@ Stand: 2026-08-16. Branch `p0-praesentations-skelett`, alles gepusht.
 npm test                 # Logik-Tests
 npm run check:media      # zeigt, welche Medien fehlen
 .\START_PRAESENTATION.bat
+.\SICHERN.bat            # media/ wegkopieren
 ```
+
+## media/ liegt bewusst NICHT im Repo
+
+Alles darin ist per Skript reproduzierbar, aber nicht umsonst: die
+Sprecherstimme kostet einen API-Lauf, die Videos kosten Renderzeit. Und
+jeder Neurender würde eine neue Kopie in der Git-Historie ablegen —
+`shot_03` wurde bereits dreimal gerendert, das wären 24 MB Ballast für eine
+8-MB-Datei.
+
+**Deshalb: nach jedem Rendersatz `SICHERN.bat` laufen lassen.** Es spiegelt
+`media/` mit robocopy weg, standardmäßig nach
+`..\Sarajevo 1914 - Sicherung`, oder auf ein anderes Laufwerk per Argument.
 
 ## Was als Nächstes zu tun ist
 

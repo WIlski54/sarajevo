@@ -38,6 +38,12 @@ body {
 .startscreen {
   position: absolute;
   inset: 0;
+  /* Ueber ALLEN Overlays. Strukturelle Absicherung, kein Feinschliff: die
+     Kapiteluebersicht liegt im DOM nach dem Startbildschirm und hat ihn
+     verdeckt. Der Startknopf war damit unerreichbar - kein Bild und kein
+     Ton, obwohl beides fertig war. Mit dieser Ebene kann kein Overlay den
+     Start mehr aussperren, auch bei einem kuenftigen Fehler nicht. */
+  z-index: 100;
   display: grid;
   place-content: center;
   justify-items: center;

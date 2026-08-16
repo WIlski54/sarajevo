@@ -141,6 +141,23 @@ const ACTIONS = {
 
 window.addEventListener("keydown", (event) => {
   if (event.repeat) return;
+
+  // VOR dem Start reagiert nur der Start selbst.
+  //
+  // Ohne diese Sperre war die Praesentation nicht bedienbar: `Esc` oder `V`
+  // oeffneten die Kapiteluebersicht, die im DOM nach dem Startbildschirm
+  // liegt und ihn deshalb verdeckt. Der Startknopf war damit unerreichbar,
+  // und weil er nie geklickt wurde, blieb auch der AudioContext gesperrt -
+  // kein Bild UND kein Ton, obwohl beides fertig war. Genau dieser Zustand
+  // ist einem Nutzer passiert.
+  if (!presenter.state.started) {
+    if ([" ", "Enter", "ArrowRight"].includes(event.key)) {
+      event.preventDefault();
+      starten();
+    }
+    return;
+  }
+
   const action = actionForKey(event.key);
   if (!action) return;
   event.preventDefault();
@@ -155,7 +172,12 @@ window.addEventListener("keydown", (event) => {
 el("stage").addEventListener("click", (event) => {
   // Klicks auf Bedienelemente nicht als Weiterblaettern deuten.
   if (event.target.closest("button")) return;
-  if (!presenter.state.started) return;
+  // Ein Klick ins Bild startet, wenn noch nicht gestartet wurde - der
+  // Vortragende soll nie in einen Zustand geraten, in dem nichts reagiert.
+  if (!presenter.state.started) {
+    starten();
+    return;
+  }
   presenter.next();
 });
 
@@ -178,18 +200,26 @@ document.addEventListener("visibilitychange", () => {
 
 /* ---------- Start ---------- */
 
-el("startbutton").addEventListener("click", () => {
-  // Genau hier - und nur hier - darf der AudioContext entstehen: Browser
-  // geben Ton erst nach einer Nutzerinteraktion frei. Das ist der
-  // eigentliche Zweck des Startbildschirms.
+/**
+ * Startet die Praesentation. Erreichbar ueber den Knopf, die Leertaste,
+ * Enter, Pfeil rechts und einen Klick ins Bild - absichtlich mehrfach, damit
+ * niemand vor einer Klasse nach dem richtigen Weg suchen muss.
+ *
+ * Genau hier - und nur hier - darf der AudioContext entstehen: Browser geben
+ * Ton erst nach einer Nutzerinteraktion frei. Das ist der eigentliche Zweck
+ * des Startbildschirms.
+ */
+function starten() {
+  if (presenter.state.started) return;
   audio.unlock();
-
   el("startscreen").hidden = true;
   presenter.start();
   board.show(presenter.beat());
   showCurrentShot();
   audio.playBeat(presenter.beat());
-});
+}
+
+el("startbutton").addEventListener("click", starten);
 
 // Der erste Zustandsanstoss, damit Uhr und Kapitelleiste stimmen,
 // bevor gestartet wird.

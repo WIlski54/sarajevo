@@ -15,32 +15,24 @@ import random
 
 import bpy
 
-from lib import anim, licht, materials
+from lib import anim, licht, materials, props
 
 DAUER_S = 17
 FPS = 30
 
+# Die Kolonne faehrt AUF DIE KAMERA ZU (von +X nach -X).
+#
+# Im ersten Entwurf fuhr sie von der Kamera weg - man sah drei Wagen von
+# hinten, und vom Thronfolgerpaar war nichts zu erkennen. Genau darauf
+# kommt es in diesem Beat aber an: dass man sieht, WESSEN Wagen das Ziel
+# ist. Entgegenkommend zeigt der Wagen Front, Scheinwerfer und die
+# Ruecksitzbank mit dem Paar.
+KOLONNE_VON = 55.0
+KOLONNE_BIS = -25.0
 
-def _quader(name, mitte, groesse, material=None):
-    """Achsenparalleler Kasten mit den Aussenmassen `groesse`, zentriert auf
-    `mitte`. Fast die ganze Stadt besteht daraus - Fassaden von 1914 sind
-    Kastenformen mit Gliederung, kein Freiform-Design.
-
-    ACHTUNG, teuer gelernt: `primitive_cube_add(size=1)` erzeugt einen
-    Wuerfel von EINER Einheit Kantenlaenge (-0,5 bis +0,5). Die Skalierung
-    ist deshalb `groesse`, NICHT `groesse / 2`. Mit der Halbierung war jeder
-    Baukoerper der Szene halb so gross wie beabsichtigt, sass aber auf
-    Koordinaten fuer die volle Groesse: Haeuser schwebten 3,6 m ueber dem
-    Boden und ihre Fenster hingen neben der Fassade in der Luft. Gefunden
-    wurde das nicht am Bild, sondern durch Messen der Bounding-Boxen.
-    """
-    bpy.ops.mesh.primitive_cube_add(size=1, location=mitte)
-    ob = bpy.context.active_object
-    ob.name = name
-    ob.scale = groesse
-    if material:
-        ob.data.materials.append(material)
-    return ob
+# Kuerzel: der Quader-Helfer liegt jetzt in lib/props.py, weil ihn jeder
+# Shot braucht.
+_quader = props.quader
 
 
 def _strasse(mat_stein, mat_kalk):
@@ -212,48 +204,39 @@ def _menge(mat_stoff, mat_haut, anzahl: int = 170):
         kopf.data.materials.append(mat_haut)
 
 
-def _wagen(mat_lack, mat_gummi, mat_glas):
-    """Drei offene Wagen der Kolonne, stilisiert nach dem Graef & Stift
-    Double Phaeton. Das Verdeck ist zurueckgeschlagen - genau daran prallt
-    in Shot 05 die Granate ab."""
+def _kolonne(mats, frames):
+    """Drei offene Wagen, entgegenkommend. Der mittlere ist der Wagen des
+    Thronfolgerpaars und traegt Insassen und Standarte.
+
+    Der Vorauswagen faehrt voran, der dritte folgt. Abstand bewusst gross:
+    auf historischen Aufnahmen liegen zwischen den Wagen mehrere Laengen,
+    und genau dieser Abstand ist der Grund, warum die Granate unter dem
+    NACHFOLGENDEN Wagen detonierte statt unter dem des Thronfolgers.
+    """
     wagen = []
-    for k, x in enumerate((-16.0, 0.0, 16.0)):
-        teile = [
-            _quader(f"Wagen{k}_Kasten", (x, 1.2, 0.95), (4.6, 1.9, 0.95), mat_lack),
-            _quader(f"Wagen{k}_Haube", (x + 2.6, 1.2, 1.15), (1.6, 1.7, 0.8), mat_lack),
-            _quader(f"Wagen{k}_Scheibe", (x + 1.6, 1.2, 1.75), (0.12, 1.5, 0.7), mat_glas),
-            _quader(f"Wagen{k}_Verdeck", (x - 2.3, 1.2, 1.55), (1.1, 1.8, 0.5), mat_lack),
-        ]
-        for vx, vy in ((2.0, 1.0), (2.0, -1.0), (-1.9, 1.0), (-1.9, -1.0)):
-            bpy.ops.mesh.primitive_cylinder_add(
-                vertices=16, radius=0.46, depth=0.22,
-                rotation=(math.pi / 2, 0, 0),
-                location=(x + vx, 1.2 + vy * 0.95, 0.46),
-            )
-            rad = bpy.context.active_object
-            rad.name = f"Wagen{k}_Rad{vx:+.0f}{vy:+.0f}"
-            rad.data.materials.append(mat_gummi)
-            teile.append(rad)
-
-        leer = bpy.data.objects.new(f"Wagen{k}", None)
-        bpy.context.collection.objects.link(leer)
-        for t in teile:
-            t.parent = leer
+    for k, versatz in enumerate((-14.0, 0.0, 15.0)):
+        thronfolger = k == 1
+        leer = props.graef_stift(
+            f"Wagen{k}", versatz, 1.2, mats,
+            mit_paar=thronfolger, mit_standarte=thronfolger,
+        )
+        # 180 Grad gedreht: die Front zeigt jetzt in Fahrtrichtung -X,
+        # also auf die Kamera zu.
+        leer.rotation_euler = (0, 0, math.pi)
         wagen.append(leer)
-    return wagen
 
-
-def _fahrt(wagen, frames):
-    """Die Kolonne rollt durch das Bild."""
     for leer in wagen:
-        leer.location = (-70, 0, 0)
+        leer.location = (KOLONNE_VON, 0, 0)
         leer.keyframe_insert("location", frame=1)
-        leer.location = (58, 0, 0)
+        leer.location = (KOLONNE_BIS, 0, 0)
         leer.keyframe_insert("location", frame=frames)
         # LINEAR, nicht BEZIER: konstante Geschwindigkeit. Ein Wagen von
         # 1914 beschleunigt auf einer Uferstrasse nicht, und ein
         # Bezier-Auslauf wuerde ihn am Bildrand abbremsen lassen.
+        # 80 m in 17 s sind 4,7 m/s, also rund 17 km/h - Schritttempo einer
+        # Kolonne, die von einer Menge gesaeumt wird.
         anim.set_interpolation(leer, "LINEAR")
+    return wagen
 
 
 def _kamera(scene, frames):
@@ -263,11 +246,17 @@ def _kamera(scene, frames):
     selbst in der Menge am Kai. Die Seitfahrt erzeugt Parallaxe zwischen
     Laternen und Fassaden - erst dadurch bekommt die Strasse Tiefe.
     """
-    bpy.ops.object.camera_add(location=(-34, -6.2, 1.75))
+    # Etwas ueber Augenhoehe: von 1,75 m schaute man dem Wagen frontal auf
+    # die Bordwand, von 2,05 m leicht hinein - und genau dort sitzt das Paar.
+    bpy.ops.object.camera_add(location=(-34, -6.2, 2.05))
     kamera = bpy.context.active_object
     kamera.name = "Kamera"
     scene.camera = kamera
-    kamera.data.lens = 42
+    # 55 statt 42 mm: bei 42 mm blieb das Thronfolgerpaar auch beim
+    # naechsten Vorbeifahren zu klein, um es zu erkennen - und genau darauf
+    # kommt es in diesem Beat an. Die laengere Brennweite verdichtet
+    # ausserdem die Fassadenzeile, was der Strasse gut steht.
+    kamera.data.lens = 55
     kamera.data.dof.use_dof = True
     kamera.data.dof.aperture_fstop = 2.5
 
@@ -281,16 +270,25 @@ def _kamera(scene, frames):
     schauen.up_axis = "UP_Y"
     kamera.data.dof.focus_object = ziel
 
-    kamera.location = (-34, -6.2, 1.75)
+    # Die Keyframes muessen die Hoehe von oben mittragen - sie ueberschreiben
+    # die Startposition, sonst faellt die Kamera auf den alten Wert zurueck.
+    # Naeher an den Bordstein: 4,6 statt 6,2 m Seitenabstand zur Fahrspur.
+    kamera.location = (-34, -4.6, 2.05)
     kamera.keyframe_insert("location", frame=1)
-    kamera.location = (-8, -6.6, 1.72)
+    kamera.location = (-24, -5.0, 2.02)
     kamera.keyframe_insert("location", frame=frames)
     anim.ease(kamera)
     anim.handheld(kamera)
 
-    ziel.location = (6, 1.2, 1.4)
+    # Das Ziel wandert der entgegenkommenden Kolonne entgegen: erst weit die
+    # Strasse hinauf, dann mit dem Wagen des Thronfolgers heran und an der
+    # Kamera vorbei. Dadurch bleibt das Paar von der Ferne bis zur Nahe im
+    # Bild, ohne dass die Kamera selbst grosse Wege macht.
+    ziel.location = (30, 1.2, 1.5)
     ziel.keyframe_insert("location", frame=1)
-    ziel.location = (34, 1.2, 1.4)
+    ziel.location = (2, 1.2, 1.5)
+    ziel.keyframe_insert("location", frame=int(frames * 0.72))
+    ziel.location = (-14, 1.2, 1.5)
     ziel.keyframe_insert("location", frame=frames)
     anim.ease(ziel)
 
@@ -324,13 +322,26 @@ def build(scene: bpy.types.Scene) -> None:
         materials.putz("Putz_Oliv", (0.41, 0.41, 0.30)),
     ]
 
+    mats = {
+        "lack": mat_lack,
+        "gummi": mat_gummi,
+        "glas": mat_glas,
+        "messing": mat_messing,
+        "uniform": mat_stoff,
+        "general": materials.generalsuniform(),
+        "kleid": materials.kleid(),
+        "haut": materials.stoff("Hut", (0.045, 0.042, 0.040)),
+        "federn": materials.federn(),
+        "standarte": materials.standarte(),
+    }
+
     _berge(materials.berg())
     _strasse(mat_stein, mat_kalk)
     _fluss(mat_wasser, mat_kalk)
     _fassadenzeile(putze, mat_glas, mat_kalk)
     _laternen(mat_messing, mat_glas)
-    _menge(mat_stoff, materials.stoff("Hut", (0.045, 0.042, 0.040)))
-    _fahrt(_wagen(mat_lack, mat_gummi, mat_glas), frames)
+    _menge(mat_stoff, mats["haut"])
+    _kolonne(mats, frames)
 
     licht.sonne()
     licht.himmel(scene)

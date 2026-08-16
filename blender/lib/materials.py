@@ -193,13 +193,35 @@ def wasser(name: str = "Miljacka") -> bpy.types.Material:
     return mat
 
 
-def lack(name: str = "Autolack", ton=(0.014, 0.028, 0.020)) -> bpy.types.Material:
+def generalsuniform(name: str = "Generalsuniform", ton=(0.30, 0.36, 0.44)) -> bpy.types.Material:
+    """Hellblaue Kavalleriegeneralsuniform - Franz Ferdinands Waffenrock.
+
+    Historisch zutreffend UND bildnotwendig: mit dunkelblauem Tuch
+    verschwand die Figur vollstaendig im dunklen Wagenkasten. Das Hellblau
+    setzt sie sichtbar davon ab und bildet zugleich den Kontrast zu Sophies
+    weissem Kleid daneben - das Paar liest sich damit als Paar, ohne dass
+    ein Gesicht noetig ist.
+    """
+    mat, tree, bsdf = _new(name)
+    bsdf.inputs["Base Color"].default_value = (*ton, 1)
+    bsdf.inputs["Roughness"].default_value = 0.90
+    if "Sheen Weight" in bsdf.inputs:
+        bsdf.inputs["Sheen Weight"].default_value = 0.3
+    return mat
+
+
+def lack(name: str = "Autolack", ton=(0.055, 0.085, 0.070)) -> bpy.types.Material:
     """Dunkelgruener Lack - der Graef & Stift Double Phaeton.
 
     Klarlack bewusst schwach: mit Coat 0,9 und Metallic 0,1 sah der Wagen
     wie gebuerstetes Aluminium aus, nicht wie lackiertes Blech von 1914.
     Ein Wagen dieser Zeit hat einen tiefen, satten Lack mit einem
     schmalen Glanzstreifen, keine Spiegelflaeche.
+
+    Der Grundton war anfangs fast schwarz (0,014). Entgegenkommend und im
+    eigenen Schatten wurde der Wagen damit zur schwarzen Kiste ohne Form -
+    und die Insassen verschwanden darin. Jetzt dunkelgruen, aber hell
+    genug, dass Kanten, Kotfluegel und Bordwand lesbar bleiben.
     """
     mat, tree, bsdf = _new(name)
     bsdf.inputs["Base Color"].default_value = (*ton, 1)
@@ -258,6 +280,40 @@ def glas_dunkel(name: str = "Fensterglas") -> bpy.types.Material:
     bsdf.inputs["Base Color"].default_value = (0.020, 0.024, 0.028, 1)
     bsdf.inputs["Roughness"].default_value = 0.08
     bsdf.inputs["Metallic"].default_value = 0.35
+    return mat
+
+
+def kleid(name: str = "Sommerkleid", ton=(0.74, 0.71, 0.66)) -> bpy.types.Material:
+    """Helles Sommerkleid.
+
+    Sophie trug am 28. Juni ein weisses Kleid. Der Helligkeitskontrast zur
+    dunklen Uniform daneben ist der Grund, warum das Paar auf jeder
+    Aufnahme sofort als Paar zu erkennen ist - und warum dieser Shot ohne
+    ein einziges Gesicht auskommt.
+    """
+    mat, tree, bsdf = _new(name)
+    bsdf.inputs["Base Color"].default_value = (*ton, 1)
+    bsdf.inputs["Roughness"].default_value = 0.88
+    if "Sheen Weight" in bsdf.inputs:
+        bsdf.inputs["Sheen Weight"].default_value = 0.4
+    return mat
+
+
+def federn(name: str = "Federbusch", ton=(0.30, 0.42, 0.24)) -> bpy.types.Material:
+    """Der Federbusch des Generalshelms. Gedecktes Gruen, matt."""
+    mat, tree, bsdf = _new(name)
+    bsdf.inputs["Base Color"].default_value = (*ton, 1)
+    bsdf.inputs["Roughness"].default_value = 0.95
+    if "Sheen Weight" in bsdf.inputs:
+        bsdf.inputs["Sheen Weight"].default_value = 0.6
+    return mat
+
+
+def standarte(name: str = "Standarte", ton=(0.42, 0.34, 0.10)) -> bpy.types.Material:
+    """Wimpel am Kotfluegel. Gold-schwarz, gedeckt."""
+    mat, tree, bsdf = _new(name)
+    bsdf.inputs["Base Color"].default_value = (*ton, 1)
+    bsdf.inputs["Roughness"].default_value = 0.7
     return mat
 
 

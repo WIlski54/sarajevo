@@ -13,10 +13,33 @@
 
 import { mediaUrl } from "../mediaBase.js";
 
-/** Prueft per HEAD, ob eine Datei ausgeliefert wird. */
+/**
+ * Kleinste Groesse, ab der eine Videodatei als brauchbar gilt.
+ * Ein abgebrochener Render hinterlaesst eine 0-Byte- oder Rumpfdatei;
+ * ein echter Shot liegt bei mehreren Megabyte.
+ */
+const MINDESTGROESSE = 64 * 1024;
+
+/**
+ * Prueft per HEAD, ob eine Datei ausgeliefert wird UND Inhalt hat.
+ *
+ * Die Groessenpruefung ist nicht ueberfluessig: ein abgebrochener Blender-
+ * Render hinterlaesst eine 0-Byte-Datei, und die liefert brav HTTP 200.
+ * Ohne diese Pruefung haelt die Praesentation sie fuer ein gueltiges Video,
+ * zeigt schwarz und faellt NICHT auf die Texttafel zurueck - der Rueckfall,
+ * der als Sicherheitsnetz gedacht ist, wuerde den Fehler also verdecken.
+ * Genau so eine Datei ist beim Abbruch eines Hintergrundrenders entstanden.
+ */
 export async function probeFile(file) {
   const response = await fetch(mediaUrl(file), { method: "HEAD" });
-  return response.ok;
+  if (!response.ok) return false;
+  const groesse = Number(response.headers.get("content-length"));
+  // Fehlt der Header, wird die Datei akzeptiert - lieber ein Versuch als
+  // ein falscher Rueckfall.
+  if (!Number.isFinite(groesse) || groesse === 0) {
+    return response.headers.get("content-length") === null;
+  }
+  return groesse >= MINDESTGROESSE;
 }
 
 /**

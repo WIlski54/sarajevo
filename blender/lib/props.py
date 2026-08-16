@@ -156,6 +156,24 @@ def breiter_hut(name, mitte, mat_hut):
 # --------------------------------------------------------------------------
 
 
+def gruppe(name, teile, ort=(0.0, 0.0, 0.0)):
+    """Fasst Teile unter einem Empty zusammen, das an `ort` sitzt.
+
+    WICHTIG, teuer gelernt: die Teile muessen um den LOKALEN Ursprung
+    gebaut sein, und das Empty traegt die Position. Wird stattdessen an
+    Weltkoordinaten gebaut und an ein Empty im Ursprung gehaengt, dreht
+    eine Rotation des Empty die Gruppe um den WELTURSPRUNG - eine Figur
+    18 m daneben verschwindet damit aus dem Bild. Genau so war der Werfer
+    in Shot 04 unsichtbar.
+    """
+    leer = bpy.data.objects.new(name, None)
+    bpy.context.collection.objects.link(leer)
+    for t in teile:
+        t.parent = leer
+    leer.location = ort
+    return leer
+
+
 def graef_stift(
     name, x, y, materialien, mit_paar: bool = False, mit_standarte: bool = False
 ):
@@ -172,6 +190,12 @@ def graef_stift(
     prallt die Granate ab, und genau deshalb sass das Paar frei sichtbar.
     """
     m = materialien
+    # ALLES um den lokalen Ursprung bauen, die Position traegt das Empty.
+    # Sonst dreht eine Rotation der Gruppe den Wagen um den Weltursprung
+    # statt um die eigene Achse - siehe gruppe().
+    ort = (x, y, 0.0)
+    x = y = 0.0
+
     teile = [
         quader(f"{name}_Kasten", (x, y, 0.95), (4.6, 1.9, 0.95), m["lack"]),
         quader(f"{name}_Haube", (x + 2.6, y, 1.15), (1.6, 1.7, 0.8), m["lack"]),
@@ -245,11 +269,40 @@ def graef_stift(
                    m["standarte"])
         )
 
-    leer = bpy.data.objects.new(name, None)
-    bpy.context.collection.objects.link(leer)
-    for t in teile:
-        t.parent = leer
-    return leer
+    return gruppe(name, teile, ort)
+
+
+def kolonne(name, materialien, versaetze=(-14.0, 0.0, 15.0), thronfolger=1,
+            y=1.2, entgegenkommend=True):
+    """Die Wagenkolonne als EIN bewegliches Objekt.
+
+    Aufbau in zwei Ebenen, und das ist noetig:
+      - jeder Wagen sitzt an seinem Versatz und ist um seine EIGENE Achse
+        gedreht (entgegenkommend heisst 180 Grad),
+      - alle haengen an einem Konvoi-Empty, das nur VERSCHOBEN wird.
+
+    Wuerde man stattdessen das Konvoi-Empty drehen, wanderten die Wagen um
+    den Weltursprung und ihre Y-Position kippte auf die andere
+    Strassenseite. Und wuerde ein Shot die Position des Wagen-Empty selbst
+    animieren, gingen Versatz und Y verloren - beides ist passiert.
+
+    Liefert (konvoi, wagenliste).
+    """
+    konvoi = bpy.data.objects.new(name, None)
+    bpy.context.collection.objects.link(konvoi)
+
+    wagen = []
+    for k, versatz in enumerate(versaetze):
+        ist_thronfolger = k == thronfolger
+        leer = graef_stift(
+            f"{name}_Wagen{k}", versatz, y, materialien,
+            mit_paar=ist_thronfolger, mit_standarte=ist_thronfolger,
+        )
+        if entgegenkommend:
+            leer.rotation_euler = (0, 0, math.pi)
+        leer.parent = konvoi
+        wagen.append(leer)
+    return konvoi, wagen
 
 
 def laterne(name, x, y, mat_mast, mat_glas):

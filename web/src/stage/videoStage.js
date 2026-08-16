@@ -57,11 +57,20 @@ export async function chooseSource(shot, probe = probeFile) {
   }
 }
 
-/** Beschreibungstexte des Platzhalters. */
+/**
+ * Beschreibungstexte des Platzhalters.
+ *
+ * Der Hinweis ist bewusst in Klartext und nicht nur der Dateiname: solange
+ * die Shots entstehen, sieht ein Nutzer diese Flaeche in fast jedem Beat,
+ * und ein nackter Dateipfad liest sich wie ein Defekt statt wie ein
+ * Zwischenstand. Der Pfad bleibt trotzdem stehen - er sagt beim
+ * Weiterbauen, welche Datei fehlt.
+ */
 export function describePlaceholder(beat, shot) {
   return {
     beatLabel: beat.clock ? `Beat ${beat.id} · ${beat.clock}` : `Beat ${beat.id}`,
     title: beat.title,
+    hinweis: "Ton und Text laufen — das Bild wird noch gerendert",
     file: shot.file,
   };
 }
@@ -102,11 +111,15 @@ export function createVideoStage(elements, probe = probeFile) {
     title.className = "placeholder__title";
     title.textContent = info.title;
 
+    const hinweis = document.createElement("p");
+    hinweis.className = "placeholder__hinweis";
+    hinweis.textContent = info.hinweis;
+
     const file = document.createElement("p");
     file.className = "placeholder__file";
-    file.textContent = `${info.file} — noch nicht gerendert`;
+    file.textContent = info.file;
 
-    placeholder.append(label, title, file);
+    placeholder.append(label, title, hinweis, file);
     placeholder.hidden = false;
   };
 

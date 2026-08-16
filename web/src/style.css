@@ -161,10 +161,19 @@ body {
   line-height: 1.1;
 }
 
+/* Klartext-Hinweis. Solange die Shots entstehen, sieht der Nutzer diese
+   Flaeche in fast jedem Beat - ohne Erklaerung wirkt sie wie ein Defekt. */
+.placeholder__hinweis {
+  margin: 0;
+  color: var(--ink-dim);
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+}
+
 .placeholder__file {
-  color: #6d6459;
+  color: #5b544a;
   font-family: ui-monospace, Consolas, monospace;
-  font-size: 0.8rem;
+  font-size: 0.74rem;
 }
 
 /* ---------- Texttafel ---------- */
